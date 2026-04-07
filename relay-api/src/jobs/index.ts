@@ -36,3 +36,22 @@ export async function enqueueTestJob(): Promise<void> {
     { removeOnComplete: true, attempts: 3, backoff: { type: 'exponential', delay: 1000 } },
   );
 }
+
+const EMERGENCY_REMINDER_DELAY_MS = 24 * 60 * 60 * 1000;
+
+export async function enqueueEmergencyInfoReminder(userId: string): Promise<void> {
+  if (!queues) {
+    console.warn('Queues not initialized; skip emergency reminder scheduling');
+    return;
+  }
+  await queues.emergencyInfoReminder.add(
+    'deferredUserReminder',
+    { userId },
+    {
+      delay: EMERGENCY_REMINDER_DELAY_MS,
+      removeOnComplete: true,
+      attempts: 2,
+      backoff: { type: 'exponential', delay: 5000 },
+    },
+  );
+}

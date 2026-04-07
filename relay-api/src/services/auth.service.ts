@@ -36,13 +36,18 @@ async function issueTokensForUser(env: Env, user: User): Promise<AuthTokens> {
 
 export async function registerUser(
   env: Env,
-  input: { name: string; email: string; password: string },
+  input: { name: string; email?: string; phone?: string; password: string },
 ): Promise<{ user: User; tokens: AuthTokens }> {
   const passwordHash = await bcrypt.hash(input.password, BCRYPT_ROUNDS);
+  const emailRaw = input.email?.toLowerCase().trim();
+  const phoneRaw = input.phone?.trim();
+  const email = emailRaw && emailRaw.length > 0 ? emailRaw : null;
+  const phone = phoneRaw && phoneRaw.length > 0 ? phoneRaw : null;
   const user = await prisma.user.create({
     data: {
-      name: input.name,
-      email: input.email.toLowerCase().trim(),
+      name: input.name.trim(),
+      email,
+      phone,
       passwordHash,
     },
   });
@@ -52,10 +57,14 @@ export async function registerUser(
 
 export async function loginUser(
   env: Env,
-  input: { email: string; password: string },
+  input: { email?: string; phone?: string; password: string },
 ): Promise<{ user: User; tokens: AuthTokens }> {
-  const user = await prisma.user.findUnique({
-    where: { email: input.email.toLowerCase().trim() },
+  const email = input.email?.toLowerCase().trim();
+  const phone = input.phone?.trim();
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [...(email ? [{ email }] : []), ...(phone ? [{ phone }] : [])],
+    },
   });
   if (!user?.passwordHash) {
     throw new Error('Invalid credentials');

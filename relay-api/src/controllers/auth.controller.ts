@@ -9,16 +9,23 @@ import {
   registerUser,
 } from '../services/auth.service';
 
-const registerBody = z.object({
-  name: z.string().trim().min(1),
-  email: z.email(),
-  password: z.string().min(8),
-});
+const registerBody = z
+  .object({
+    name: z.string().trim().min(1),
+    email: z.email().optional(),
+    phone: z.string().trim().min(8).optional(),
+    password: z.string().min(8),
+    invitationToken: z.string().trim().optional(),
+  })
+  .refine((d) => Boolean(d.email ?? d.phone), { message: 'email or phone required' });
 
-const loginBody = z.object({
-  email: z.email(),
-  password: z.string().min(1),
-});
+const loginBody = z
+  .object({
+    email: z.email().optional(),
+    phone: z.string().trim().optional(),
+    password: z.string().min(1),
+  })
+  .refine((d) => Boolean(d.email ?? d.phone), { message: 'email or phone required' });
 
 const refreshBody = z.object({
   refreshToken: z.string().min(1),
@@ -33,16 +40,27 @@ export function createAuthController(env: Env) {
         return;
       }
       try {
-        const { user, tokens } = await registerUser(env, parsed.data);
+        const { invitationToken: _t, ...registerInput } = parsed.data;
+        void _t;
+        const { user, tokens } = await registerUser(env, registerInput);
         res.status(201).json({
-          user: { id: user.id, name: user.name, email: user.email },
+          user: { id: user.id, name: user.name, email: user.email, phone: user.phone },
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
           expiresIn: tokens.expiresInSeconds,
         });
       } catch (e: unknown) {
         if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
-          res.status(409).json({ error: 'Email already registered' });
+          const target = (e.meta?.target as string[] | undefined)?.join(',') ?? '';
+          if (target.includes('email')) {
+            res.status(409).json({ error: 'Email already registered' });
+            return;
+          }
+          if (target.includes('phone')) {
+            res.status(409).json({ error: 'Phone number already registered' });
+            return;
+          }
+          res.status(409).json({ error: 'Email or phone already registered' });
           return;
         }
         const msg = e instanceof Error ? e.message : 'Error';
@@ -59,7 +77,7 @@ export function createAuthController(env: Env) {
       try {
         const { user, tokens } = await loginUser(env, parsed.data);
         res.status(200).json({
-          user: { id: user.id, name: user.name, email: user.email },
+          user: { id: user.id, name: user.name, email: user.email, phone: user.phone },
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
           expiresIn: tokens.expiresInSeconds,
