@@ -2,6 +2,7 @@ import type { Express } from 'express';
 import type { Env } from '../config/env';
 import { createAuthRouter } from './auth.routes';
 import { createDemoRouter } from './demo.routes';
+import { createEventTripsRouter } from './event-trips.routes';
 import { createInvitationsPublicRouter } from './invitations.public.routes';
 import { createProtectedDemoRouter } from './protected.routes';
 import { createTeamsRouter } from './teams.routes';
@@ -13,6 +14,7 @@ export function registerRoutes(app: Express, env: Env): void {
   app.use('/auth', createAuthRouter(env));
   app.use('/invitations', createInvitationsPublicRouter(env));
   app.use('/teams', createTeamsRouter(env));
+  app.use('/events', createEventTripsRouter(env));
   app.use('/users', createUsersRouter(env));
   app.use(createDemoRouter(env));
   app.use(createProtectedDemoRouter(env));

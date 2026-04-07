@@ -1,4 +1,4 @@
-import type { OnboardingState, Role } from '@prisma/client';
+import type { EventStatus, EventType, OnboardingState, Role } from '@prisma/client';
 
 declare global {
   namespace Express {
@@ -15,9 +15,18 @@ declare global {
       onboardingState: OnboardingState;
     }
 
+    interface EventRowPayload {
+      id: string;
+      teamId: string;
+      type: EventType;
+      status: EventStatus;
+      name: string;
+    }
+
     interface Request {
       user?: UserPayload;
       member?: MemberPayload;
+      eventRow?: EventRowPayload;
     }
   }
 }
