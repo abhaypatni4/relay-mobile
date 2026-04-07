@@ -56,3 +56,21 @@ export function serializeTeamMember(viewerRole: Role, row: TeamMemberWithUser): 
   };
   return base;
 }
+
+/**
+ * Roster list: coordinator sees full operational detail; coach/staff/player see names and roles only.
+ */
+export function serializeRosterMember(viewerRole: Role, row: TeamMemberWithUser): JsonObject {
+  if (viewerRole === 'coordinator') {
+    return serializeTeamMember('coach', row);
+  }
+  const o: JsonObject = {
+    id: row.id,
+    name: row.name,
+    role: row.role,
+  };
+  if (row.customRoleLabel) {
+    o.customRoleLabel = row.customRoleLabel;
+  }
+  return o;
+}
