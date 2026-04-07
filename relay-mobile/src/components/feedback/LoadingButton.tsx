@@ -9,6 +9,7 @@ export interface LoadingButtonProps {
   label: string;
   isLoading: boolean;
   onPress: () => void;
+  disabled?: boolean;
   style?: ViewStyle;
 }
 
@@ -16,12 +17,13 @@ export function LoadingButton({
   label,
   isLoading,
   onPress,
+  disabled = false,
   style,
 }: LoadingButtonProps): React.ReactElement {
   return (
     <Pressable
       onPress={onPress}
-      disabled={isLoading}
+      disabled={isLoading || disabled}
       style={({ pressed }) => [
         {
           minHeight: 48,

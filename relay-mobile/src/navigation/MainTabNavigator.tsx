@@ -14,17 +14,17 @@ import {
   EventDetailScreen,
   EventsListScreen,
   FeedScreen,
-  HomeScreen,
   MemberDetailScreen,
   NotificationPreferencesScreen,
   PostCreationScreen,
   PostDetailScreen,
   SquadSelectionScreen,
-  TeamRosterScreen,
   TeamSettingsScreen,
   TripDetailScreen,
   TripReviewScreen,
 } from '@/screens/labels';
+import { HomeScreen } from '@/screens/home/HomeScreen';
+import { TeamRosterScreen } from '@/screens/team/TeamRosterScreen';
 import { TextVariantDemoScreen } from '@/screens/TextVariantDemoScreen';
 import type {
   EventsStackParamList,

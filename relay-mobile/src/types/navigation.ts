@@ -5,9 +5,8 @@
 export type AuthStackParamList = {
   Splash: undefined;
   Login: undefined;
-  AccountCreation: undefined;
-  AcceptInvite: { token: string };
-  EmergencyInfoPrompt: undefined;
+  AccountCreation: { invitationToken?: string } | undefined;
+  AcceptInvite: { token?: string };
 };
 
 export type HomeStackParamList = {
@@ -54,10 +53,15 @@ export type AppStackParamList = {
   CreateTeam: undefined;
   CreateFirstEvent: undefined;
   InviteMembers: undefined;
+  EmergencyInfoPrompt: undefined;
   MainTabs: undefined;
 };
 
+/** Single root stack: auth/onboarding screens + MainApp (nested app shell). */
 export type RootStackParamList = {
-  Auth: undefined;
-  App: undefined;
+  Splash: undefined;
+  Login: undefined;
+  AccountCreation: { invitationToken?: string } | undefined;
+  AcceptInvite: { token?: string };
+  MainApp: undefined;
 };

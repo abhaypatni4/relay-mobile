@@ -4,23 +4,19 @@ import type { RootStackParamList } from '@/types/navigation';
 
 /**
  * Deep link map — docs/ux/information-architecture.md (Deep Link Map).
- * Nested structure matches App → MainTabs → tab stacks.
+ * Nested structure matches MainApp → MainTabs → tab stacks.
  */
 export const linkingScreens = {
-  Auth: {
-    screens: {
-      Splash: '',
-      Login: 'login',
-      AccountCreation: 'signup',
-      AcceptInvite: 'invite/:token',
-      EmergencyInfoPrompt: 'onboarding/emergency',
-    },
-  },
-  App: {
+  Splash: '',
+  Login: 'login',
+  AccountCreation: 'signup',
+  AcceptInvite: 'invite/:token',
+  MainApp: {
     screens: {
       CreateTeam: 'onboarding/team',
       CreateFirstEvent: 'onboarding/event',
       InviteMembers: 'onboarding/invite',
+      EmergencyInfoPrompt: 'onboarding/emergency',
       MainTabs: {
         screens: {
           HomeTab: {
