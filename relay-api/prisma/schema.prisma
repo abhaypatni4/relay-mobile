@@ -1,0 +1,9 @@
+// Expanded in M0-T02. DATABASE_URL must be set for migrations and the Prisma client.
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
