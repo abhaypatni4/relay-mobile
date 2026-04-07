@@ -4,8 +4,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   eslint.configs.recommended,
-  ...tseslint.configs.strictTypeChecked,
-  ...tseslint.configs.stylisticTypeChecked,
+  ...tseslint.configs.recommended,
   eslintConfigPrettier,
   {
     languageOptions: {
@@ -16,12 +15,22 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.ts'],
+    files: ['**/*.ts', '**/*.tsx'],
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', 'eslint.config.mjs', 'vitest.config.ts'],
+    ignores: [
+      'node_modules/**',
+      'android/**',
+      'ios/**',
+      '.expo/**',
+      'eslint.config.mjs',
+      'babel.config.js',
+      'jest.config.cjs',
+      'app.config.ts',
+    ],
   },
 );

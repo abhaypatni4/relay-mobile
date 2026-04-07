@@ -1,4 +1,5 @@
-// Expanded in M0-T02. DATABASE_URL must be set for migrations and the Prisma client.
+// Full schema per docs/engineering/domain-models.md (Prisma section), plus auth & push fields.
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -6,4 +7,335 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+}
+
+model User {
+  id                      String    @id @default(cuid())
+  name                    String
+  email                   String?   @unique
+  phone                   String?   @unique
+  passwordHash            String?
+  pushToken               String?
+  emergencyContactName    String?
+  emergencyContactPhone   String?
+  emergencyAllergyAlert   String?
+  emergencyStaffNote      String?
+  emergencyInfoUpdatedAt  DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  teamMemberships         TeamMember[]
+  emergencyInfoAccessLogs EmergencyInfoAccessLog[] @relation("AccessedFor")
+  refreshTokens           RefreshToken[]
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Team {
+  id               String                @id @default(cuid())
+  name             String
+  sport            String?
+  homeLocation     String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  members          TeamMember[]
+  events           Event[]
+  invitationLinks  InvitationLink[]
+  transfers        CoordinatorTransfer[]
+  posts            Post[]
+}
+
+model TeamMember {
+  id                      String                   @id @default(cuid())
+  userId                  String
+  teamId                  String
+  role                    Role
+  onboardingState         OnboardingState          @default(invited)
+  jerseyNumber            String?
+  customRoleLabel         String?
+  invitedAt               DateTime                 @default(now())
+  joinedAt                DateTime?
+  removedAt               DateTime?
+  user                    User                     @relation(fields: [userId], references: [id])
+  team                    Team                     @relation(fields: [teamId], references: [id])
+  tripAssignments         TripSquadAssignment[]
+  availabilitySubmissions AvailabilitySubmission[]
+  postDeliveryStates      PostDeliveryState[]
+  documentConfirmations   DocumentConfirmation[]
+  emergencyInfoAccessLogs EmergencyInfoAccessLog[] @relation("AccessedBy")
+
+  @@unique([userId, teamId])
+}
+
+model InvitationLink {
+  id        String   @id @default(cuid())
+  teamId    String
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  team      Team     @relation(fields: [teamId], references: [id])
+}
+
+model Event {
+  id                       String      @id @default(cuid())
+  teamId                   String
+  type                     EventType
+  name                     String
+  date                     DateTime
+  startTime                String
+  location                 String?
+  status                   EventStatus @default(draft)
+  cancelledAt              DateTime?
+  postponedAt              DateTime?
+  newDateAfterPostponement DateTime?
+  newTimeAfterPostponement String?
+  createdBy                String
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+  team                     Team        @relation(fields: [teamId], references: [id])
+  tripWorkspace            TripWorkspace?
+  availabilityWindow       AvailabilityWindow?
+  linkedPosts              Post[]
+}
+
+model TripWorkspace {
+  id                       String    @id @default(cuid())
+  eventId                  String    @unique
+  departureTime            DateTime?
+  departureMeetingPoint    String?
+  transportationNotes      String?
+  accommodationName        String?
+  accommodationAddress     String?
+  accommodationCheckInTime DateTime?
+  matchEventTime           DateTime?
+  matchEventLocation       String?
+  returnDepartureTime      DateTime?
+  returnDeparturePoint     String?
+  additionalNotes          String?
+  itineraryVersion         Int       @default(1)
+  isPublished              Boolean   @default(false)
+  publishedAt              DateTime?
+  event                    Event     @relation(fields: [eventId], references: [id])
+  squadAssignments         TripSquadAssignment[]
+  documentChecklist        DocumentChecklist?
+  emergencyInfoAccessLogs  EmergencyInfoAccessLog[]
+}
+
+model TripSquadAssignment {
+  id                           String          @id @default(cuid())
+  tripWorkspaceId              String
+  teamMemberId                 String
+  travelingStatus              TravelingStatus @default(unassigned)
+  acknowledgedItineraryVersion Int?
+  assignedAt                   DateTime        @default(now())
+  updatedAt                    DateTime        @updatedAt
+  tripWorkspace                TripWorkspace   @relation(fields: [tripWorkspaceId], references: [id])
+  teamMember                   TeamMember      @relation(fields: [teamMemberId], references: [id])
+
+  @@unique([tripWorkspaceId, teamMemberId])
+}
+
+model DocumentChecklist {
+  id              String                  @id @default(cuid())
+  tripWorkspaceId String                  @unique
+  tripWorkspace   TripWorkspace           @relation(fields: [tripWorkspaceId], references: [id])
+  items           DocumentChecklistItem[]
+}
+
+model DocumentChecklistItem {
+  id                  String               @id @default(cuid())
+  documentChecklistId String
+  name                String
+  applicability       DocumentApplicability @default(allPlayers)
+  specificMemberIds   String[]
+  createdAt           DateTime             @default(now())
+  documentChecklist   DocumentChecklist    @relation(fields: [documentChecklistId], references: [id])
+  confirmations       DocumentConfirmation[]
+}
+
+model DocumentConfirmation {
+  id              String                @id @default(cuid())
+  checklistItemId String
+  teamMemberId    String
+  confirmedAt     DateTime              @default(now())
+  checklistItem   DocumentChecklistItem @relation(fields: [checklistItemId], references: [id])
+  teamMember      TeamMember            @relation(fields: [teamMemberId], references: [id])
+
+  @@unique([checklistItemId, teamMemberId])
+}
+
+model AvailabilityWindow {
+  id                           String    @id @default(cuid())
+  eventId                      String    @unique
+  openedBy                     String
+  openedAt                     DateTime  @default(now())
+  lockedAt                     DateTime?
+  isLocked                     Boolean   @default(false)
+  selectionNotificationsSentAt DateTime?
+  event                        Event     @relation(fields: [eventId], references: [id])
+  submissions                  AvailabilitySubmission[]
+}
+
+model AvailabilitySubmission {
+  id                          String             @id @default(cuid())
+  availabilityWindowId      String
+  teamMemberId                String
+  availabilityStatus          AvailabilityStatus?
+  note                        String?
+  operationalStatus           OperationalStatus  @default(unassigned)
+  operationalStatusSetBy      String?
+  submittedAt                 DateTime?
+  updatedAt                   DateTime           @updatedAt
+  selectionNotificationSentAt DateTime?
+  availabilityWindow          AvailabilityWindow @relation(fields: [availabilityWindowId], references: [id])
+  teamMember                  TeamMember         @relation(fields: [teamMemberId], references: [id])
+
+  @@unique([availabilityWindowId, teamMemberId])
+}
+
+model Post {
+  id                     String          @id @default(cuid())
+  teamId                 String
+  eventId                String?
+  type                   PostType
+  content                String
+  recipientGroup         RecipientGroup
+  isUrgent               Boolean         @default(false)
+  requiresAcknowledgment Boolean         @default(false)
+  overdueThresholdHours  Int             @default(4)
+  createdBy              String
+  createdAt              DateTime        @default(now())
+  deletedAt              DateTime?
+  isDraft                Boolean         @default(false)
+  team                   Team            @relation(fields: [teamId], references: [id])
+  linkedEvent            Event?          @relation(fields: [eventId], references: [id])
+  deliveryStates         PostDeliveryState[]
+}
+
+model PostDeliveryState {
+  id              String        @id @default(cuid())
+  postId          String
+  teamMemberId    String
+  deliveryState   DeliveryState @default(notSeen)
+  seenAt          DateTime?
+  acknowledgedAt  DateTime?
+  lastNudgeSentAt DateTime?
+  nudgeCount      Int           @default(0)
+  post            Post          @relation(fields: [postId], references: [id])
+  teamMember      TeamMember    @relation(fields: [teamMemberId], references: [id])
+
+  @@unique([postId, teamMemberId])
+}
+
+model CoordinatorTransfer {
+  id           String         @id @default(cuid())
+  teamId       String
+  fromMemberId String
+  toMemberId   String
+  status       TransferStatus @default(pending)
+  initiatedAt  DateTime       @default(now())
+  respondedAt  DateTime?
+  expiresAt    DateTime
+  team         Team           @relation(fields: [teamId], references: [id])
+}
+
+model EmergencyInfoAccessLog {
+  id              String        @id @default(cuid())
+  accessedById    String
+  accessedForId   String
+  tripWorkspaceId String
+  accessedAt      DateTime      @default(now())
+  accessedBy      TeamMember    @relation("AccessedBy", fields: [accessedById], references: [id])
+  accessedFor     User          @relation("AccessedFor", fields: [accessedForId], references: [id])
+  tripWorkspace   TripWorkspace @relation(fields: [tripWorkspaceId], references: [id])
+}
+
+enum Role {
+  coordinator
+  coach
+  staff
+  player
+}
+
+enum OnboardingState {
+  invited
+  profileIncomplete
+  active
+}
+
+enum EventType {
+  match
+  training
+  trip
+}
+
+enum EventStatus {
+  draft
+  active
+  cancelled
+  postponed
+  complete
+}
+
+enum TravelingStatus {
+  traveling
+  notTraveling
+  unassigned
+}
+
+enum AvailabilityStatus {
+  available
+  limited
+  unavailable
+}
+
+enum OperationalStatus {
+  selected
+  notSelected
+  traveling
+  medicallyRestricted
+  unassigned
+}
+
+enum PostType {
+  scheduleUpdate
+  travelInfo
+  generalAnnouncement
+  urgentAlert
+}
+
+enum RecipientGroup {
+  fullTeam
+  travelingSquad
+  coachingStaff
+  allStaff
+}
+
+enum DeliveryState {
+  notSeen
+  seen
+  acknowledged
+}
+
+enum TransferStatus {
+  pending
+  accepted
+  declined
+  expired
+}
+
+enum DocumentApplicability {
+  allPlayers
+  travelingSquad
+  specific
 }

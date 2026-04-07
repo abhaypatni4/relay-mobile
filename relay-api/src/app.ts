@@ -8,7 +8,7 @@ export function createApp(env: Env): express.Application {
 
   app.use(express.json());
 
-  registerRoutes(app);
+  registerRoutes(app, env);
 
   if (env.SENTRY_DSN) {
     Sentry.setupExpressErrorHandler(app);
