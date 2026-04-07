@@ -1,0 +1,38 @@
+# Relay — Cursor Behavior Rules
+
+## Source of truth
+All product, UX, design, and engineering decisions are documented in the /docs folder.
+Before implementing anything, read the relevant doc files.
+Do not invent features, components, copy, or architecture not defined in /docs.
+
+## Build order
+Follow the milestone and task plan in /docs/execution/task-board.md exactly.
+Complete tasks in dependency order.
+Do not start a task until its dependencies are marked done.
+
+## Scope
+The MVP scope is defined in /docs/product/mvp-scope.md.
+The "Not recommended" and "Later" items in that file must never be built.
+If a feature is not in the MVP scope table, do not build it.
+
+## Design
+All visual decisions follow /docs/design/design-system-direction.md.
+All copy follows /docs/ux/content-and-microcopy-guidelines.md.
+Do not invent color values, spacing, typography, or component patterns.
+Use only values defined in the design token system.
+
+## Code style
+Do not write production code speculatively.
+Build only what the current task specifies.
+Stop at the commit checkpoint defined in the task.
+
+## Permissions
+All role-based access is defined in /docs/engineering/roles-and-permissions.md.
+Never expose Medically Restricted status to Player-role API responses.
+Never expose emergency info to Player-role API responses.
+All permission enforcement is server-side.
+
+## Notifications
+All push notification copy, triggers, and deep links are defined in
+/docs/engineering/notifications-and-alerts.md.
+Do not invent notification types or copy.
