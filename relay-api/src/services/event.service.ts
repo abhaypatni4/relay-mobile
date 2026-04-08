@@ -121,7 +121,7 @@ export async function cancelTripEvent(eventId: string): Promise<CancelTripResult
         title: event.name,
         body: `${event.name} has been cancelled`,
         data: {
-          deepLink: `relay://trips/${tw.id}`,
+          deepLink: `relay://events/${eventId}`,
           type: 'TRIP_CANCELLED',
         },
       });
