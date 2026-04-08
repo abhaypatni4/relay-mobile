@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { TravelingStatus } from '@prisma/client';
 import { cancelTripEvent } from '../services/event.service';
+import { postponeTripEvent } from '../services/event.service';
 import { serializeTripWorkspace } from '../serializers/event.serializer';
 import {
   acknowledgeTripItinerary,
@@ -42,6 +43,13 @@ const squadPatchBody = z.object({
 const acknowledgeBody = z
   .object({
     expectedVersion: z.number().int(),
+  })
+  .strict();
+
+const postponeBody = z
+  .object({
+    newDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    newTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   })
   .strict();
 
@@ -271,5 +279,33 @@ export const tripsController = {
       }
       throw e;
     }
+  },
+
+  postpone: async (req: Request, res: Response): Promise<void> => {
+    const eventId = req.params.eventId;
+    const eid = Array.isArray(eventId) ? eventId[0] : eventId;
+    if (!eid || !req.eventRow) {
+      res.status(400).json({ error: 'eventId required' });
+      return;
+    }
+    const parsed = postponeBody.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Invalid body' });
+      return;
+    }
+    const out = await postponeTripEvent(eid, parsed.data.newDate, parsed.data.newTime);
+    if (out.kind === 'ok') {
+      res.status(200).json({ postponed: true, tripWorkspaceId: out.tripWorkspaceId });
+      return;
+    }
+    if (out.kind === 'ALREADY_TERMINAL') {
+      res.status(409).json({ error: 'Event is already postponed or cancelled' });
+      return;
+    }
+    if (out.kind === 'NOT_TRIP') {
+      res.status(400).json({ error: 'Only trip events can be postponed with this action' });
+      return;
+    }
+    res.status(404).json({ error: 'Not found' });
   },
 };

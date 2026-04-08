@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type { Env } from '../config/env';
 import { availabilityController } from '../controllers/availability.controller';
+import { preDepartureController } from '../controllers/predeparture.controller';
 import { tripDocumentsController } from '../controllers/trip-documents.controller';
 import { tripEmergencyController } from '../controllers/trip-emergency.controller';
 import { tripsController } from '../controllers/trips.controller';
@@ -46,6 +47,7 @@ export function createEventTripsRouter(env: Env): Router {
   );
 
   r.post('/:eventId/cancel', ...member, requireRole(['coordinator']), tripsController.cancelTrip);
+  r.post('/:eventId/postpone', ...member, requireRole(['coordinator']), tripsController.postpone);
   r.get('/:eventId/trip', ...member, tripsController.getTrip);
   r.patch('/:eventId/trip/itinerary', ...member, requireRole(['coordinator']), tripsController.patchItinerary);
   r.post(
@@ -57,6 +59,8 @@ export function createEventTripsRouter(env: Env): Router {
   r.get('/:eventId/trip/squad', ...member, tripsController.getSquad);
   r.patch('/:eventId/trip/squad', ...member, requireRole(['coordinator']), tripsController.patchSquad);
   r.post('/:eventId/trip/publish', ...member, requireRole(['coordinator']), tripsController.publish);
+  r.get('/:eventId/trip/predeparture', ...member, requireRole(['coordinator']), preDepartureController.get);
+  r.patch('/:eventId/trip/predeparture', ...member, requireRole(['coordinator']), preDepartureController.patch);
   r.get('/:eventId/trip/squad/:memberId/emergency', ...member, tripEmergencyController.getEmergencyInfo);
 
   // Document checklist

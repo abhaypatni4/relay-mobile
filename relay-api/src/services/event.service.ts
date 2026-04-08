@@ -1,6 +1,7 @@
 import type { EventType } from '@prisma/client';
 import { prisma } from '../db/prisma';
 import { sendToMultiple } from './notification.service';
+import { dispatchItineraryCriticalFieldNotifications } from './trip.service';
 
 export interface CreateEventInput {
   type: EventType;
@@ -75,6 +76,9 @@ export async function getEventByIdForTeam(teamId: string, eventId: string) {
 }
 
 export type CancelTripResult = 'ok' | 'EVENT_NOT_FOUND' | 'NOT_TRIP' | 'ALREADY_CANCELLED';
+export type PostponeTripResult =
+  | { kind: 'ok'; tripWorkspaceId: string; previousVersion: number | null }
+  | { kind: 'EVENT_NOT_FOUND' | 'NOT_TRIP' | 'ALREADY_TERMINAL' };
 
 /**
  * Coordinator-only trip cancellation: irreversible; notifies all squad assignments (any traveling status).
@@ -148,4 +152,87 @@ export async function patchTeamEvent(
       ...(input.location !== undefined ? { location: input.location?.trim() ?? null } : {}),
     },
   });
+}
+
+function parseIsoDateOnly(s: string): Date {
+  return new Date(`${s}T00:00:00.000Z`);
+}
+
+function parseNewDeparture(newDate?: string, newTime?: string): Date | null {
+  if (!newDate && !newTime) {
+    return null;
+  }
+  const date = newDate ?? new Date().toISOString().slice(0, 10);
+  const time = newTime ?? '09:00';
+  const out = new Date(`${date}T${time}:00.000Z`);
+  if (Number.isNaN(out.getTime())) {
+    throw new Error('BAD_DATETIME');
+  }
+  return out;
+}
+
+export async function postponeTripEvent(eventId: string, newDate?: string, newTime?: string): Promise<PostponeTripResult> {
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: { tripWorkspace: true },
+  });
+  if (!event) {
+    return { kind: 'EVENT_NOT_FOUND' };
+  }
+  if (event.type !== 'trip' || !event.tripWorkspace) {
+    return { kind: 'NOT_TRIP' };
+  }
+  if (event.status === 'cancelled' || event.status === 'postponed') {
+    return { kind: 'ALREADY_TERMINAL' };
+  }
+
+  const hasNew = newDate != null || newTime != null;
+  const nextDeparture = hasNew ? parseNewDeparture(newDate, newTime) : null;
+  const tripWorkspaceId = event.tripWorkspace.id;
+  const currentItineraryVersion = event.tripWorkspace.itineraryVersion;
+
+  const txOut = await prisma.$transaction(async (tx) => {
+    await tx.event.update({
+      where: { id: event.id },
+      data: {
+        status: 'postponed',
+        postponedAt: new Date(),
+        ...(newDate ? { newDateAfterPostponement: parseIsoDateOnly(newDate) } : {}),
+        ...(newTime ? { newTimeAfterPostponement: newTime } : {}),
+      },
+    });
+    let previousVersion: number | null = null;
+    if (hasNew && nextDeparture) {
+      previousVersion = currentItineraryVersion;
+      await tx.tripWorkspace.update({
+        where: { id: tripWorkspaceId },
+        data: {
+          departureTime: nextDeparture,
+          itineraryVersion: { increment: 1 },
+        },
+      });
+    }
+    return { previousVersion };
+  });
+
+  const rows = await prisma.tripSquadAssignment.findMany({
+    where: { tripWorkspaceId },
+    include: { teamMember: { include: { user: { select: { pushToken: true } } } } },
+  });
+  const tokens = rows.map((r) => r.teamMember.user.pushToken).filter((t): t is string => Boolean(t));
+  if (tokens.length > 0) {
+    await sendToMultiple(tokens, {
+      title: event.name,
+      body: hasNew
+        ? `${event.name} has been postponed — tap to see updated details and re-confirm`
+        : `${event.name} has been postponed — details will be updated soon`,
+      data: { deepLink: `relay://trips/${tripWorkspaceId}`, type: 'TRIP_POSTPONED' },
+    });
+  }
+
+  if (txOut.previousVersion !== null) {
+    await dispatchItineraryCriticalFieldNotifications(tripWorkspaceId, event.name, txOut.previousVersion);
+  }
+
+  return { kind: 'ok', tripWorkspaceId, previousVersion: txOut.previousVersion };
 }

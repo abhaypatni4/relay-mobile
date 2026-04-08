@@ -1,6 +1,6 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -17,6 +17,8 @@ import { ConfirmationSheet } from '@/components/overlay/ConfirmationSheet';
 import { BottomSheet } from '@/components/overlay/BottomSheet';
 import { TextInput } from '@/components/input/TextInput';
 import { LoadingButton } from '@/components/feedback/LoadingButton';
+import { DateTimePickerField } from '@/components/input/DateTimePicker';
+import { PreDepartureChecklistItem } from '@/components/role-specific/PreDepartureChecklistItem';
 import { api } from '@/services/api';
 import { useTripEventId } from '@/hooks/useTripEventId';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
@@ -28,6 +30,7 @@ import {
 } from '@/queries/useTripDocuments';
 import { useConfirmDocument } from '@/mutations/useConfirmDocument';
 import { useEmergencyInfo } from '@/queries/useEmergencyInfo';
+import { usePredeparture } from '@/queries/usePredeparture';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import { color } from '@/tokens/colors';
@@ -111,6 +114,8 @@ export function TripDetailScreen(): React.ReactElement {
   const listRef = useRef<FlatList>(null);
   const squadSectionY = useRef(0);
   const [cancelSheetOpen, setCancelSheetOpen] = useState(false);
+  const [postponeSheetOpen, setPostponeSheetOpen] = useState(false);
+  const [postponeDepartureIso, setPostponeDepartureIso] = useState('');
   const [breakdownOpen, setBreakdownOpen] = useState(false);
   const [breakdownItem, setBreakdownItem] = useState<CoordinatorTripDocumentItem | null>(null);
   const [addItemOpen, setAddItemOpen] = useState(false);
@@ -120,8 +125,11 @@ export function TripDetailScreen(): React.ReactElement {
   );
   const [specificSelected, setSpecificSelected] = useState<Record<string, boolean>>({});
   const [confirmingItemId, setConfirmingItemId] = useState<string | null>(null);
+  const [customItemSheetOpen, setCustomItemSheetOpen] = useState(false);
+  const [customItemLabel, setCustomItemLabel] = useState('');
   const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
   const handledUnavailable = useRef(false);
+  const isFocused = useIsFocused();
 
   const { eventId, isResolving, resolveError } = useTripEventId(teamId, tripId, paramEventId);
 
@@ -163,6 +171,7 @@ export function TripDetailScreen(): React.ReactElement {
   const isCancelled = eventRow?.status === 'cancelled';
 
   const documentsQuery = useTripDocuments(eventId ?? null);
+  const predepartureQuery = usePredeparture(eventId ?? null, isCoordinator && isFocused);
   const confirmDocument = useConfirmDocument(eventId ?? null);
 
   const addItemMutation = useMutation({
@@ -322,6 +331,40 @@ export function TripDetailScreen(): React.ReactElement {
     },
   });
 
+  const postponeMutation = useMutation({
+    mutationFn: async () => {
+      if (!eventId) {
+        throw new Error('eventId required');
+      }
+      let newDate: string | undefined;
+      let newTime: string | undefined;
+      if (postponeDepartureIso.trim()) {
+        const d = new Date(postponeDepartureIso);
+        newDate = d.toISOString().slice(0, 10);
+        newTime = `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+      }
+      await api.post(`/events/${eventId}/postpone`, { newDate, newTime });
+    },
+    onSuccess: async () => {
+      setPostponeSheetOpen(false);
+      setPostponeDepartureIso('');
+      addToast('success', 'Trip postponed. Members have been notified.');
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['teamEvents'] }),
+        queryClient.invalidateQueries({ queryKey: ['eventDetail', teamId, eventId] }),
+        queryClient.invalidateQueries({ queryKey: ['tripWorkspace', eventId] }),
+        queryClient.invalidateQueries({ queryKey: ['tripSquad', eventId] }),
+      ]);
+    },
+    onError: (e: unknown) => {
+      if (axios.isAxiosError(e) && e.response?.status === 409) {
+        addToast('error', 'This trip is already postponed or cancelled.');
+        return;
+      }
+      addToast('error', "Couldn't save — check your connection and try again.");
+    },
+  });
+
   const scrollToItinerary = useCallback(() => {
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
   }, []);
@@ -350,6 +393,12 @@ export function TripDetailScreen(): React.ReactElement {
           if (eventId) {
             navigation.navigate('EditItinerary', { tripId, eventId });
           }
+        },
+      },
+      {
+        text: 'Postpone trip',
+        onPress: () => {
+          setTimeout(() => setPostponeSheetOpen(true), 300);
         },
       },
       {
@@ -680,6 +729,80 @@ export function TripDetailScreen(): React.ReactElement {
               ) : null}
 
               <View style={{ height: spacing.space32 }} />
+
+              {isCoordinator ? (
+                <View>
+                  <SectionHeader title="Pre-Departure Checklist" />
+                  {(predepartureQuery.data?.fixedItems ?? []).map((item) => (
+                    <PreDepartureChecklistItem
+                      key={item.key}
+                      label={item.label}
+                      isComplete={item.isComplete}
+                      isAutoPopulated
+                      currentCount={item.currentCount}
+                      totalCount={item.totalCount}
+                      onViewDetail={() => {
+                        if (item.key === 'itineraryAcknowledged') {
+                          scrollToItinerary();
+                          return;
+                        }
+                        scrollToSquad();
+                      }}
+                    />
+                  ))}
+                  {(predepartureQuery.data?.customItems ?? []).map((item) => (
+                    <PreDepartureChecklistItem
+                      key={item.id}
+                      label={item.label}
+                      isComplete={item.isComplete}
+                      isAutoPopulated={false}
+                      onToggle={() => {
+                        if (isOffline) {
+                          addToast('error', 'Available when connected');
+                          return;
+                        }
+                        const current = predepartureQuery.data?.customItems ?? [];
+                        const next = current.map((c) =>
+                          c.id === item.id ? { ...c, isComplete: !c.isComplete } : c,
+                        );
+                        void api
+                          .patch(`/events/${eventId}/trip/predeparture`, { items: next })
+                          .then(() => queryClient.invalidateQueries({ queryKey: ['predeparture', eventId] }))
+                          .catch(() =>
+                            addToast('error', "Couldn't save — check your connection and try again."),
+                          );
+                      }}
+                    />
+                  ))}
+                  <View style={{ marginTop: spacing.space12 }}>
+                    <LoadingButton
+                      label="Add custom item"
+                      isLoading={false}
+                      disabled={isOffline || (predepartureQuery.data?.customItems.length ?? 0) >= 5}
+                      onPress={() => {
+                        if (isOffline) {
+                          addToast('error', 'Available when connected');
+                          return;
+                        }
+                        setCustomItemSheetOpen(true);
+                      }}
+                    />
+                  </View>
+                  <Text
+                    variant="caption"
+                    colorToken={
+                      (predepartureQuery.data?.fixedItems ?? []).every((i) => i.isComplete)
+                        ? color.stateSuccess
+                        : color.textSecondary
+                    }
+                    style={{ marginTop: spacing.space8 }}
+                  >
+                    {(predepartureQuery.data?.fixedItems ?? []).every((i) => i.isComplete)
+                      ? 'Ready to depart'
+                      : `${(predepartureQuery.data?.fixedItems ?? []).filter((i) => !i.isComplete).length} outstanding items`}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           }
           contentContainerStyle={{ paddingBottom: spacing.space32 }}
@@ -702,6 +825,69 @@ export function TripDetailScreen(): React.ReactElement {
           return cancelMutation.mutateAsync();
         }}
       />
+
+      <BottomSheet visible={postponeSheetOpen} onClose={() => setPostponeSheetOpen(false)}>
+        <Text variant="title" style={{ marginBottom: spacing.space8 }}>
+          Postpone this trip?
+        </Text>
+        <Text variant="body" colorToken={color.textSecondary} style={{ marginBottom: spacing.space12 }}>
+          All assigned members will be notified.
+        </Text>
+        <DateTimePickerField
+          label="New departure date/time (optional)"
+          valueIso={postponeDepartureIso}
+          onChange={setPostponeDepartureIso}
+          optional
+        />
+        <LoadingButton
+          label="Yes, postpone trip"
+          isLoading={postponeMutation.status === 'pending'}
+          disabled={isOffline}
+          onPress={() => {
+            if (isOffline) {
+              addToast('error', 'Available when connected');
+              return;
+            }
+            void postponeMutation.mutateAsync();
+          }}
+        />
+        <Pressable
+          onPress={() => setPostponeSheetOpen(false)}
+          style={{ minHeight: 48, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <Text variant="label" colorToken={color.actionPrimary}>
+            Go back
+          </Text>
+        </Pressable>
+      </BottomSheet>
+
+      <BottomSheet visible={customItemSheetOpen} onClose={() => setCustomItemSheetOpen(false)}>
+        <Text variant="title" style={{ marginBottom: spacing.space8 }}>
+          Add custom item
+        </Text>
+        <TextInput label="Item label" value={customItemLabel} onChangeText={setCustomItemLabel} />
+        <LoadingButton
+          label="Add"
+          isLoading={false}
+          disabled={!customItemLabel.trim()}
+          onPress={() => {
+            const label = customItemLabel.trim();
+            if (!label) {
+              return;
+            }
+            const current = predepartureQuery.data?.customItems ?? [];
+            const next = [...current, { label, isComplete: false }];
+            void api
+              .patch(`/events/${eventId}/trip/predeparture`, { items: next })
+              .then(() => {
+                setCustomItemLabel('');
+                setCustomItemSheetOpen(false);
+                return queryClient.invalidateQueries({ queryKey: ['predeparture', eventId] });
+              })
+              .catch(() => addToast('error', "Couldn't save — check your connection and try again."));
+          }}
+        />
+      </BottomSheet>
 
       <BottomSheet
         visible={breakdownOpen}
