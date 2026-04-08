@@ -27,6 +27,7 @@ export function ConfirmationSheet({
   onConfirm,
   onCancel,
 }: ConfirmationSheetProps): React.ReactElement {
+  const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
   const [loading, setLoading] = useState(false);
 
   return (
@@ -49,7 +50,7 @@ export function ConfirmationSheet({
       <View style={{ height: spacing.space12 }} />
       <Pressable
         onPress={onCancel}
-        style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center' }}
+        style={{ minHeight: MIN_TOUCH_TARGET, alignItems: 'center', justifyContent: 'center' }}
         accessibilityRole="button"
       >
         <Text variant="label" colorToken={color.actionPrimary}>

@@ -16,6 +16,7 @@ export interface SquadMemberRowProps {
   acknowledgedItineraryVersion?: number | null;
   onboardingState?: OnboardingState;
 }
+const MIN_TOUCH_TARGET = 64; // Product requirement for roster row touch size
 
 function travelingStatusDot(s: TravelingStatus): 'traveling' | 'notTraveling' | 'pending' {
   switch (s) {
@@ -46,7 +47,7 @@ export function SquadMemberRow({
   return (
     <View
       style={{
-        minHeight: 64,
+        minHeight: MIN_TOUCH_TARGET,
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: spacing.space12,

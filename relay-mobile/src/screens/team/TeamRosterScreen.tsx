@@ -13,6 +13,7 @@ import {
 } from '@/hooks/useMembers';
 import { useTeamStore } from '@/store/teamStore';
 import { color } from '@/tokens/colors';
+import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
 import type { AppStackParamList } from '@/types/navigation';
 import type { OnboardingState } from '@/types/models';
@@ -64,8 +65,8 @@ export function TeamRosterScreen(): React.ReactElement {
                     marginLeft: spacing.space8,
                     backgroundColor: color.stateWarning,
                     paddingHorizontal: spacing.space8,
-                    paddingVertical: 2,
-                    borderRadius: 4,
+                    paddingVertical: spacing.space4,
+                    borderRadius: radius.sm,
                   }}
                 >
                   <Text variant="caption" colorToken={color.surfaceElevated}>
@@ -80,8 +81,8 @@ export function TeamRosterScreen(): React.ReactElement {
                     borderWidth: 1,
                     borderColor: color.stateStaleBorder,
                     paddingHorizontal: spacing.space8,
-                    paddingVertical: 2,
-                    borderRadius: 4,
+                    paddingVertical: spacing.space4,
+                    borderRadius: radius.sm,
                   }}
                 >
                   <Text variant="caption" colorToken={color.stateWarning}>
@@ -129,7 +130,7 @@ export function TeamRosterScreen(): React.ReactElement {
             marginBottom: spacing.space12,
             padding: spacing.space12,
             backgroundColor: color.actionPrimary,
-            borderRadius: 8,
+            borderRadius: radius.sm,
             alignItems: 'center',
           }}
         >
@@ -143,7 +144,7 @@ export function TeamRosterScreen(): React.ReactElement {
             marginBottom: spacing.space16,
             padding: spacing.space12,
             backgroundColor: color.surfaceInput,
-            borderRadius: 8,
+            borderRadius: radius.sm,
             alignItems: 'center',
           }}
         >

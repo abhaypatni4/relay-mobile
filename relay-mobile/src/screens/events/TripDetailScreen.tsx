@@ -34,6 +34,7 @@ import { usePredeparture } from '@/queries/usePredeparture';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import { color } from '@/tokens/colors';
+import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
 import type { EventsStackParamList } from '@/types/navigation';
 import type { ApiEventListItem } from '@/hooks/useTeamEvents';
@@ -67,6 +68,7 @@ interface SquadAssignmentApi {
   memberRole: Role;
   onboardingState: OnboardingState;
 }
+const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
 
 function formatDateTime(iso: string | null): string {
   if (!iso) {
@@ -490,7 +492,7 @@ export function TripDetailScreen(): React.ReactElement {
               alignSelf: 'flex-start',
               paddingHorizontal: spacing.space8,
               paddingVertical: spacing.space4,
-              borderRadius: 6,
+              borderRadius: radius.sm,
               backgroundColor: st.bg,
             }}
           >
@@ -853,7 +855,7 @@ export function TripDetailScreen(): React.ReactElement {
         />
         <Pressable
           onPress={() => setPostponeSheetOpen(false)}
-          style={{ minHeight: 48, justifyContent: 'center', alignItems: 'center' }}
+          style={{ minHeight: MIN_TOUCH_TARGET, justifyContent: 'center', alignItems: 'center' }}
         >
           <Text variant="label" colorToken={color.actionPrimary}>
             Go back

@@ -18,6 +18,7 @@ const OPTIONS: { value: AvailabilityStatus; label: string; fg: string; border: s
   { value: 'limited', label: 'Limited', fg: color.stateWarning, border: color.stateWarning },
   { value: 'unavailable', label: 'Unavailable', fg: color.stateDestructive, border: color.stateDestructive },
 ];
+const MIN_TOUCH_TARGET = 64; // Product requirement for availability option touch size
 
 function triggerTapHaptic(): void {
   if (Platform.OS === 'ios') {
@@ -53,7 +54,7 @@ export function AvailabilityPicker({
             accessibilityRole="button"
             accessibilityLabel={`${opt.label}, tap to select`}
             style={{
-              minHeight: 64,
+              minHeight: MIN_TOUCH_TARGET,
               width: '100%',
               marginBottom: spacing.space12,
               paddingHorizontal: spacing.space16,

@@ -15,6 +15,7 @@ import { useAvailability } from '@/queries/useAvailability';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import { color } from '@/tokens/colors';
+import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
 import type { EventsStackParamList } from '@/types/navigation';
 import type { AvailabilityStatus } from '@/types/models';
@@ -30,9 +31,9 @@ function formatDate(iso: string): string {
 function statusPresentation(status: string): { label: string; bg: string; fg: string } {
   switch (status) {
     case 'cancelled':
-      return { label: 'Cancelled', fg: color.stateError, bg: 'hsl(4, 40%, 94%)' };
+      return { label: 'Cancelled', fg: color.stateError, bg: color.surfaceInput };
     case 'postponed':
-      return { label: 'Postponed', fg: color.stateWarning, bg: 'hsl(38, 85%, 92%)' };
+      return { label: 'Postponed', fg: color.stateWarning, bg: color.surfaceInput };
     default:
       return { label: status, fg: color.textSecondary, bg: color.surfaceInput };
   }
@@ -171,7 +172,7 @@ export function EventDetailScreen(): React.ReactElement {
             alignSelf: 'flex-start',
             paddingHorizontal: spacing.space8,
             paddingVertical: spacing.space4,
-            borderRadius: 6,
+            borderRadius: radius.sm,
             backgroundColor: st.bg,
             marginBottom: spacing.space24,
           }}

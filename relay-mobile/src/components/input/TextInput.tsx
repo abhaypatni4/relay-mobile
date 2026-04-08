@@ -22,6 +22,7 @@ export function TextInput({
   onChangeText,
   ...rest
 }: TextInputProps): React.ReactElement {
+  const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
   const [blurred, setBlurred] = useState(false);
   const showError = !optional && blurred && !(value ?? '').toString().trim();
   const mergedPlaceholder =
@@ -55,7 +56,7 @@ export function TextInput({
         onChangeText={onChangeText}
         onBlur={handleBlur}
         style={{
-          minHeight: 48,
+          minHeight: MIN_TOUCH_TARGET,
           paddingHorizontal: spacing.space12,
           borderRadius: radius.md,
           backgroundColor: color.surfaceInput,

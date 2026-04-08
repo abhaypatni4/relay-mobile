@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from '@/components/foundation/Text';
 import { color } from '@/tokens/colors';
+import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
 
 export interface SectionHeaderProps {
@@ -36,9 +37,9 @@ export function SectionHeader({
         {statusDotColor ? (
           <View
             style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
+              width: spacing.space8,
+              height: spacing.space8,
+              borderRadius: radius.sm,
               backgroundColor: statusDotColor,
               marginRight: spacing.space8,
             }}

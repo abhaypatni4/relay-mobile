@@ -4,7 +4,10 @@ import { CardContainer } from '@/components/layout/CardContainer';
 import { Text } from '@/components/foundation/Text';
 import { Icon } from '@/components/foundation/Icon';
 import { color } from '@/tokens/colors';
+import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
+const ACK_DOT_SIZE = spacing.space24 - 2;
+const ACK_DOT_RADIUS = radius.full;
 import type { DeliveryState, Post, PostType } from '@/types/models';
 
 function typeLabel(t: PostType): string {
@@ -86,9 +89,9 @@ export function PostCard({ post, onPress }: PostCardProps): React.ReactElement {
         {requiresAck ? (
           <View
             style={{
-              width: 22,
-              height: 22,
-              borderRadius: 11,
+              width: ACK_DOT_SIZE,
+              height: ACK_DOT_SIZE,
+              borderRadius: ACK_DOT_RADIUS,
               borderWidth: isAcked ? 0 : 1.5,
               borderColor: color.borderDefault,
               backgroundColor: isAcked ? color.stateSuccess : 'transparent',

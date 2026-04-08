@@ -12,6 +12,7 @@ import { api } from '@/services/api';
 import { analytics } from '@/services/analytics';
 import { useTeamStore } from '@/store/teamStore';
 import { color } from '@/tokens/colors';
+import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
 import type { EventsStackParamList } from '@/types/navigation';
 import type { EventType } from '@/types/models';
@@ -99,7 +100,7 @@ export function CreateEventScreen(): React.ReactElement {
                 paddingHorizontal: spacing.space16,
                 marginRight: spacing.space8,
                 marginBottom: spacing.space8,
-                borderRadius: 10,
+                borderRadius: radius.md,
                 backgroundColor: selected ? color.actionPrimary : color.surfaceInput,
                 minWidth: '28%',
               }}

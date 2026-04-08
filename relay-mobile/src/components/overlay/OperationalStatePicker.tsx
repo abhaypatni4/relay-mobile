@@ -17,6 +17,7 @@ export interface OperationalStatePickerProps {
 }
 
 type RowDef = { value: OperationalStatus; label: string };
+const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
 
 function rowsForRole(role: Role): RowDef[] {
   if (role === 'coordinator') {
@@ -82,7 +83,7 @@ export function OperationalStatePicker({
           <Pressable
             onPress={() => trySelect('selected')}
             style={{
-              minHeight: 48,
+              minHeight: MIN_TOUCH_TARGET,
               borderRadius: radius.md,
               backgroundColor: color.actionPrimary,
               alignItems: 'center',
@@ -104,7 +105,7 @@ export function OperationalStatePicker({
               key={r.value}
               onPress={() => trySelect(r.value)}
               style={{
-                minHeight: 52,
+                minHeight: spacing.space48,
                 paddingVertical: spacing.space12,
                 paddingHorizontal: spacing.space12,
                 marginBottom: spacing.space8,

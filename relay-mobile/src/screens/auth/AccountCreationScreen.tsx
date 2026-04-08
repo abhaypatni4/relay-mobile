@@ -13,6 +13,7 @@ import { analytics, pseudonymizedUserId } from '@/services/analytics';
 import { applyMembershipsToTeamStore, fetchMe } from '@/services/session';
 import { useAuthStore } from '@/store/authStore';
 import { color } from '@/tokens/colors';
+import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
 import type { RootStackParamList } from '@/types/navigation';
 import type { Role } from '@/types/models';
@@ -141,7 +142,7 @@ export function AccountCreationScreen(): React.ReactElement {
                   style={{
                     paddingVertical: spacing.space8,
                     paddingHorizontal: spacing.space12,
-                    borderRadius: 8,
+                    borderRadius: radius.sm,
                     backgroundColor: selected ? color.actionPrimary : color.surfaceInput,
                   }}
                 >

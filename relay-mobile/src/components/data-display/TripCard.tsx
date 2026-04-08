@@ -4,6 +4,7 @@ import { Text } from '@/components/foundation/Text';
 import { Icon } from '@/components/foundation/Icon';
 import { CardContainer } from '@/components/layout/CardContainer';
 import { color } from '@/tokens/colors';
+import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
 import type { EventStatus } from '@/types/models';
 
@@ -58,9 +59,9 @@ function formatDeparture(iso: string | null): string {
 function statusPill(status: EventStatus): { label: string; fg: string; bg: string } {
   switch (status) {
     case 'cancelled':
-      return { label: 'Cancelled', fg: color.stateError, bg: 'hsl(4, 40%, 94%)' };
+      return { label: 'Cancelled', fg: color.stateError, bg: color.surfaceInput };
     case 'postponed':
-      return { label: 'Postponed', fg: color.stateWarning, bg: 'hsl(38, 85%, 92%)' };
+      return { label: 'Postponed', fg: color.stateWarning, bg: color.surfaceInput };
     default:
       return { label: '', fg: color.textSecondary, bg: color.surfaceInput };
   }
@@ -102,7 +103,7 @@ export function PlayerTripCard({ trip, onPress }: PlayerTripCardProps): React.Re
             alignSelf: 'flex-start',
             paddingHorizontal: spacing.space8,
             paddingVertical: spacing.space4,
-            borderRadius: 6,
+            borderRadius: radius.sm,
             backgroundColor: pill.bg,
             marginBottom: spacing.space12,
           }}
@@ -171,7 +172,7 @@ export function CoordinatorTripCard({
             alignSelf: 'flex-start',
             paddingHorizontal: spacing.space8,
             paddingVertical: spacing.space4,
-            borderRadius: 6,
+            borderRadius: radius.sm,
             backgroundColor: pill.bg,
             marginBottom: spacing.space12,
           }}

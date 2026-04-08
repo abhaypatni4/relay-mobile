@@ -42,6 +42,7 @@ function statusLabel(s: AvailabilityStatus): string {
       return s;
   }
 }
+const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
 
 export function AvailabilitySubmissionScreen(): React.ReactElement {
   const navigation = useNavigation<NativeStackNavigationProp<EventsStackParamList, 'AvailabilitySubmission'>>();
@@ -198,7 +199,7 @@ export function AvailabilitySubmissionScreen(): React.ReactElement {
           isOffline ? (
             <View
               style={{
-                minHeight: 48,
+                minHeight: MIN_TOUCH_TARGET,
                 borderRadius: radius.md,
                 backgroundColor: color.surfaceInput,
                 alignItems: 'center',

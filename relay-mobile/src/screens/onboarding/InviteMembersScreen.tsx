@@ -10,6 +10,7 @@ import { api } from '@/services/api';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import { color } from '@/tokens/colors';
+import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
 import type { AppStackParamList } from '@/types/navigation';
 
@@ -94,7 +95,7 @@ export function InviteMembersScreen(): React.ReactElement {
           style={{
             padding: spacing.space12,
             backgroundColor: color.surfaceInput,
-            borderRadius: 8,
+            borderRadius: radius.sm,
             marginBottom: spacing.space16,
           }}
         >

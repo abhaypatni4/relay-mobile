@@ -20,6 +20,7 @@ export interface SkeletonLoaderProps {
 }
 
 export function SkeletonLoader({ variant, style }: SkeletonLoaderProps): React.ReactElement {
+  const MIN_ROW_HEIGHT = 56; // Product requirement for list row skeleton density
   const [reduceMotion, setReduceMotion] = useState(false);
   const [layout, setLayout] = useState<LayoutRectangle | null>(null);
   const x = useRef(new Animated.Value(0)).current;
@@ -57,7 +58,7 @@ export function SkeletonLoader({ variant, style }: SkeletonLoaderProps): React.R
       };
     }
     return {
-      height: 56,
+      height: MIN_ROW_HEIGHT,
       borderRadius: radius.sm,
       width: '100%' as const,
     };

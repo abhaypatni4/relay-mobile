@@ -18,6 +18,7 @@ import type { AvailabilityStatus, OperationalStatus, Role } from '@/types/models
 
 type AvailFilter = 'all' | AvailabilityStatus | 'notSubmitted';
 type RoleFilter = 'all' | 'player' | 'staff';
+const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
 
 export function AvailabilityRosterScreen(): React.ReactElement {
   const route = useRoute<RouteProp<EventsStackParamList, 'AvailabilityRoster'>>();
@@ -93,7 +94,7 @@ export function AvailabilityRosterScreen(): React.ReactElement {
           paddingHorizontal: spacing.space12,
           paddingVertical: spacing.space8,
           marginRight: spacing.space8,
-          borderRadius: 20,
+          borderRadius: spacing.space20,
           backgroundColor: active ? color.actionPrimary : color.surfaceInput,
         }}
       >
@@ -195,8 +196,8 @@ export function AvailabilityRosterScreen(): React.ReactElement {
           <Pressable
             onPress={() => setConfirmNotify(true)}
             style={{
-              minHeight: 48,
-              borderRadius: 8,
+              minHeight: MIN_TOUCH_TARGET,
+              borderRadius: spacing.space8,
               backgroundColor: color.actionPrimary,
               alignItems: 'center',
               justifyContent: 'center',

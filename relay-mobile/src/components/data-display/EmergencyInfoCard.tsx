@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import { Linking, Pressable, View } from 'react-native';
 import { Text } from '@/components/foundation/Text';
 import { color } from '@/tokens/colors';
+import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
 
 function digitsCount(s: string): number {
@@ -74,7 +75,7 @@ export function EmergencyInfoCard(props: {
         borderLeftWidth: 4,
         borderLeftColor: border,
         backgroundColor: color.surfaceElevated,
-        borderRadius: 12,
+        borderRadius: radius.lg,
       }}
     >
       <View style={{ marginBottom: spacing.space12 }}>

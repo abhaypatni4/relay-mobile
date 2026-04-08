@@ -19,6 +19,7 @@ export interface AcknowledgmentButtonProps {
   tripWorkspace: TripWorkspaceAckRef | null | undefined;
   currentMemberAssignment: SquadAssignmentAckRef | null | undefined;
 }
+const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
 
 function triggerAckHaptic(): void {
   if (Platform.OS === 'ios') {
@@ -77,7 +78,7 @@ export function AcknowledgmentButton({
       <View style={{ marginTop: spacing.space16 }}>
         <View
           style={{
-            minHeight: 48,
+            minHeight: MIN_TOUCH_TARGET,
             borderRadius: radius.md,
             backgroundColor: color.surfaceInput,
             alignItems: 'center',
@@ -100,7 +101,7 @@ export function AcknowledgmentButton({
           marginTop: spacing.space16,
           flexDirection: 'row',
           alignItems: 'center',
-          minHeight: 48,
+          minHeight: MIN_TOUCH_TARGET,
         }}
         accessibilityRole="text"
         accessibilityLabel="Confirmed"
@@ -128,7 +129,7 @@ export function AcknowledgmentButton({
         onPress={() => void onPress()}
         disabled={!needsAcknowledgment}
         style={({ pressed }) => ({
-          minHeight: 48,
+          minHeight: MIN_TOUCH_TARGET,
           borderRadius: radius.md,
           backgroundColor: color.actionPrimary,
           alignItems: 'center',

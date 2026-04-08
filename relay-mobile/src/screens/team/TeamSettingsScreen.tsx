@@ -16,6 +16,7 @@ import { color } from '@/tokens/colors';
 import type { TeamStackParamList } from '@/types/navigation';
 
 export function TeamSettingsScreen(): React.ReactElement {
+  const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
   const navigation = useNavigation<NativeStackNavigationProp<TeamStackParamList, 'TeamSettings'>>();
   const teamId = useTeamStore((s) => s.activeTeamId);
   const role = useTeamStore((s) => s.role);
@@ -118,7 +119,7 @@ export function TeamSettingsScreen(): React.ReactElement {
           void Clipboard.setStringAsync(inviteLink);
           addToast('success', 'Link copied');
         }}
-        style={{ minHeight: 48, justifyContent: 'center', alignItems: 'center' }}
+        style={{ minHeight: MIN_TOUCH_TARGET, justifyContent: 'center', alignItems: 'center' }}
       >
         <Text variant="label" colorToken={color.actionPrimary}>
           Copy link

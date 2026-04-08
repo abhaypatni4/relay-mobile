@@ -61,4 +61,5 @@ export const color = {
   stateOverdue: colorPrimitive.urgency500,
   stateOfflineBanner: colorPrimitive.offline550,
   stateStaleBorder: colorPrimitive.urgency500,
+  shadow: '#000000',
 } as const;

@@ -48,6 +48,7 @@ export function DateTimePicker({
   optional = false,
   pickerMode = 'datetime',
 }: DateTimePickerProps): React.ReactElement {
+  const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
   const [open, setOpen] = useState(false);
   const fallback = useMemo(() => {
     if (pickerMode === 'date') {
@@ -112,7 +113,7 @@ export function DateTimePicker({
       <Pressable
         onPress={() => setOpen(true)}
         style={{
-          minHeight: 48,
+          minHeight: MIN_TOUCH_TARGET,
           paddingHorizontal: spacing.space12,
           borderRadius: radius.md,
           backgroundColor: color.surfaceInput,

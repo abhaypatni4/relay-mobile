@@ -25,6 +25,7 @@ interface SquadAssignmentRow {
   memberName: string;
   onboardingState: OnboardingState;
 }
+const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
 
 function formatDeparture(iso: string | null): string {
   if (!iso) {
@@ -164,7 +165,7 @@ export function TripReviewScreen(): React.ReactElement {
       <View style={{ height: spacing.space12 }} />
       <Pressable
         onPress={onSaveDraft}
-        style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center' }}
+        style={{ minHeight: MIN_TOUCH_TARGET, alignItems: 'center', justifyContent: 'center' }}
         accessibilityRole="button"
       >
         <Text variant="label" colorToken={color.actionPrimary}>

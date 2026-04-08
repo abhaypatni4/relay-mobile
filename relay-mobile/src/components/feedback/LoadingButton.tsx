@@ -22,13 +22,14 @@ export function LoadingButton({
   variant = 'primary',
   style,
 }: LoadingButtonProps): React.ReactElement {
+  const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
   return (
     <Pressable
       onPress={onPress}
       disabled={isLoading || disabled}
       style={({ pressed }) => [
         {
-          minHeight: 48,
+          minHeight: MIN_TOUCH_TARGET,
           paddingHorizontal: spacing.space16,
           borderRadius: radius.md,
           backgroundColor: variant === 'destructive' ? color.stateDestructive : color.actionPrimary,

@@ -16,6 +16,7 @@ export function TextInput({
   secureTextEntry,
   ...rest
 }: TextInputProps): React.ReactElement {
+  const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
   return (
     <View style={{ marginBottom: spacing.space16 }}>
       <Text variant="label" colorToken={color.textLabel} style={{ marginBottom: spacing.space4 }}>
@@ -25,7 +26,7 @@ export function TextInput({
         placeholderTextColor={color.textDisabled}
         secureTextEntry={secureTextEntry}
         style={{
-          minHeight: 48,
+          minHeight: MIN_TOUCH_TARGET,
           paddingHorizontal: spacing.space12,
           borderRadius: radius.md,
           backgroundColor: color.surfaceInput,

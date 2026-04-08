@@ -12,6 +12,7 @@ export interface ListRowProps {
   onPress?: () => void;
   style?: ViewStyle;
 }
+const MIN_ROW_HEIGHT = 56; // Product minimum row height requirement
 
 export function ListRow({
   leading,
@@ -25,7 +26,7 @@ export function ListRow({
     <View
       style={[
         {
-          minHeight: 56,
+          minHeight: MIN_ROW_HEIGHT,
           flexDirection: 'row',
           alignItems: 'center',
           paddingVertical: spacing.space12,

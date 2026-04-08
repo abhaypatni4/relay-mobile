@@ -4,6 +4,7 @@ import { Text } from '@/components/foundation/Text';
 import { color } from '@/tokens/colors';
 import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
+import { typography } from '@/tokens/typography';
 
 export interface TextAreaInputProps {
   label?: string;
@@ -20,6 +21,7 @@ export function TextAreaInput({
   onChangeText,
   maxLength,
 }: TextAreaInputProps): React.ReactElement {
+  const MIN_TEXTAREA_HEIGHT = 100;
   const showCount = maxLength !== undefined && value.length >= Math.floor(maxLength * 0.8);
   return (
     <View style={{ marginBottom: spacing.space16 }}>
@@ -37,14 +39,14 @@ export function TextAreaInput({
         maxLength={maxLength}
         textAlignVertical="top"
         style={{
-          minHeight: 100,
+          minHeight: MIN_TEXTAREA_HEIGHT,
           paddingHorizontal: spacing.space12,
           paddingVertical: spacing.space12,
           borderRadius: radius.md,
           backgroundColor: color.surfaceInput,
           color: color.textPrimary,
-          fontSize: 16,
-          lineHeight: 22,
+          fontSize: typography.body.fontSize,
+          lineHeight: typography.body.lineHeight,
         }}
       />
       {showCount && maxLength !== undefined ? (

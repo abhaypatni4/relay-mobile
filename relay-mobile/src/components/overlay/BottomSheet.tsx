@@ -13,10 +13,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color } from '@/tokens/colors';
 import { duration } from '@/tokens/duration';
+import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
 
 const SCREEN_H = Dimensions.get('window').height;
 const DISMISS_THRESHOLD = 120;
+const SHEET_HANDLE_WIDTH = spacing.space40;
+const SHEET_HANDLE_HEIGHT = spacing.space4;
 
 export interface BottomSheetProps {
   visible: boolean;
@@ -179,8 +182,8 @@ export function BottomSheet({
             maxHeight: SCREEN_H * 0.88,
             paddingBottom: insets.bottom + spacing.space8,
             backgroundColor: color.surfaceElevated,
-            borderTopLeftRadius: spacing.space16,
-            borderTopRightRadius: spacing.space16,
+            borderTopLeftRadius: radius.lg,
+            borderTopRightRadius: radius.lg,
             ...Platform.select({
               android: { elevation: 16 },
               ios: {
@@ -199,9 +202,9 @@ export function BottomSheet({
             <View
               style={{
                 alignSelf: 'center',
-                width: 40,
-                height: 4,
-                borderRadius: 2,
+                width: SHEET_HANDLE_WIDTH,
+                height: SHEET_HANDLE_HEIGHT,
+                borderRadius: radius.sm,
                 backgroundColor: color.borderDefault,
                 marginBottom: spacing.space12,
               }}

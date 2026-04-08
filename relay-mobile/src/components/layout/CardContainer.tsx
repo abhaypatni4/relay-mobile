@@ -8,7 +8,7 @@ const shadowStyle: ViewStyle = {
   backgroundColor: color.surfaceElevated,
   borderRadius: radius.md,
   padding: spacing.space16,
-  shadowColor: '#000000',
+  shadowColor: color.shadow,
   shadowOffset: { width: 0, height: 1 },
   shadowOpacity: 0.06,
   shadowRadius: 4,
