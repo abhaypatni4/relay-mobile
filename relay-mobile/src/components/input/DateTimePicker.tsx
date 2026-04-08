@@ -32,7 +32,7 @@ function parseIso(s: string, fallback: Date): Date {
   return Number.isNaN(d.getTime()) ? fallback : d;
 }
 
-export interface DateTimePickerFieldProps {
+export interface DateTimePickerProps {
   label: string;
   valueIso: string;
   onChange: (iso: string) => void;
@@ -41,13 +41,13 @@ export interface DateTimePickerFieldProps {
   pickerMode?: 'date' | 'time' | 'datetime';
 }
 
-export function DateTimePickerField({
+export function DateTimePicker({
   label,
   valueIso,
   onChange,
   optional = false,
   pickerMode = 'datetime',
-}: DateTimePickerFieldProps): React.ReactElement {
+}: DateTimePickerProps): React.ReactElement {
   const [open, setOpen] = useState(false);
   const fallback = useMemo(() => {
     if (pickerMode === 'date') {
@@ -146,3 +146,5 @@ export function DateTimePickerField({
     </View>
   );
 }
+
+export const DateTimePickerField = DateTimePicker;

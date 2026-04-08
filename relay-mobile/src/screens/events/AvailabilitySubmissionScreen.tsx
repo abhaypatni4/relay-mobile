@@ -156,7 +156,7 @@ export function AvailabilitySubmissionScreen(): React.ReactElement {
           </Text>
         ) : null}
 
-        <AvailabilityPicker value={picker} onChange={setPicker} readOnly={locked} />
+        <AvailabilityPicker currentStatus={picker} onSelect={setPicker} isLocked={locked} />
 
         {locked && myRow?.availabilityStatus ? (
           <Text variant="body" style={{ marginBottom: spacing.space16 }}>

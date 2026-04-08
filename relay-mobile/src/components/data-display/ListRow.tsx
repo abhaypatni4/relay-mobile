@@ -6,8 +6,8 @@ import { spacing } from '@/tokens/spacing';
 
 export interface ListRowProps {
   leading?: React.ReactNode;
-  primary: string;
-  secondary?: string;
+  primaryText: string;
+  secondaryText?: string;
   trailing?: React.ReactNode;
   onPress?: () => void;
   style?: ViewStyle;
@@ -15,8 +15,8 @@ export interface ListRowProps {
 
 export function ListRow({
   leading,
-  primary,
-  secondary,
+  primaryText,
+  secondaryText,
   trailing,
   onPress,
   style,
@@ -38,11 +38,11 @@ export function ListRow({
       {leading}
       <View style={{ flex: 1 }}>
         <Text variant="body" colorToken={color.textPrimary}>
-          {primary}
+          {primaryText}
         </Text>
-        {secondary ? (
+        {secondaryText ? (
           <Text variant="caption" colorToken={color.textSecondary}>
-            {secondary}
+            {secondaryText}
           </Text>
         ) : null}
       </View>
@@ -51,8 +51,9 @@ export function ListRow({
   );
 
   if (onPress) {
+    const accessibilityLabel = secondaryText ? `${primaryText}. ${secondaryText}` : primaryText;
     return (
-      <Pressable onPress={onPress} accessibilityRole="button">
+      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel}>
         {row}
       </Pressable>
     );

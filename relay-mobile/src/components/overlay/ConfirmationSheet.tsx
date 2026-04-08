@@ -40,12 +40,10 @@ export function ConfirmationSheet({
       <LoadingButton
         label={confirmLabel}
         isLoading={loading}
+        variant={isDestructive ? 'destructive' : 'primary'}
         onPress={() => {
           setLoading(true);
           void Promise.resolve(onConfirm()).finally(() => setLoading(false));
-        }}
-        style={{
-          backgroundColor: isDestructive ? color.stateDestructive : color.actionPrimary,
         }}
       />
       <View style={{ height: spacing.space12 }} />

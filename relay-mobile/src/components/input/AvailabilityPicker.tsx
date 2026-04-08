@@ -8,9 +8,9 @@ import { spacing } from '@/tokens/spacing';
 import type { AvailabilityStatus } from '@/types/models';
 
 export interface AvailabilityPickerProps {
-  value: AvailabilityStatus | null;
-  onChange: (v: AvailabilityStatus) => void;
-  readOnly?: boolean;
+  currentStatus: AvailabilityStatus | null;
+  onSelect: (v: AvailabilityStatus) => void;
+  isLocked?: boolean;
 }
 
 const OPTIONS: { value: AvailabilityStatus; label: string; fg: string; border: string }[] = [
@@ -26,30 +26,30 @@ function triggerTapHaptic(): void {
 }
 
 export function AvailabilityPicker({
-  value,
-  onChange,
-  readOnly = false,
+  currentStatus,
+  onSelect,
+  isLocked = false,
 }: AvailabilityPickerProps): React.ReactElement {
   const onPick = useCallback(
     (v: AvailabilityStatus) => {
-      if (readOnly) {
+      if (isLocked) {
         return;
       }
       triggerTapHaptic();
-      onChange(v);
+      onSelect(v);
     },
-    [onChange, readOnly],
+    [isLocked, onSelect],
   );
 
   return (
     <View style={{ marginBottom: spacing.space16 }}>
       {OPTIONS.map((opt) => {
-        const selected = value === opt.value;
+        const selected = currentStatus === opt.value;
         return (
           <Pressable
             key={opt.value}
             onPress={() => onPick(opt.value)}
-            disabled={readOnly}
+            disabled={isLocked}
             accessibilityRole="button"
             accessibilityLabel={`${opt.label}, tap to select`}
             style={{

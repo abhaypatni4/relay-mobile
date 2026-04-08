@@ -10,6 +10,7 @@ export interface LoadingButtonProps {
   isLoading: boolean;
   onPress: () => void;
   disabled?: boolean;
+  variant?: 'primary' | 'destructive';
   style?: ViewStyle;
 }
 
@@ -18,6 +19,7 @@ export function LoadingButton({
   isLoading,
   onPress,
   disabled = false,
+  variant = 'primary',
   style,
 }: LoadingButtonProps): React.ReactElement {
   return (
@@ -29,7 +31,7 @@ export function LoadingButton({
           minHeight: 48,
           paddingHorizontal: spacing.space16,
           borderRadius: radius.md,
-          backgroundColor: color.actionPrimary,
+          backgroundColor: variant === 'destructive' ? color.stateDestructive : color.actionPrimary,
           alignItems: 'center',
           justifyContent: 'center',
           opacity: pressed && !isLoading ? 0.9 : 1,
