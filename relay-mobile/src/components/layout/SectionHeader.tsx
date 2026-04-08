@@ -42,7 +42,8 @@ export function SectionHeader({
               backgroundColor: statusDotColor,
               marginRight: spacing.space8,
             }}
-            accessibilityLabel={statusDotA11yLabel ?? 'Status'}
+            accessibilityRole="image"
+            accessibilityLabel={statusDotA11yLabel ?? 'Section status'}
           />
         ) : null}
         <Text variant="label" colorToken={color.textPrimary}>
