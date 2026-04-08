@@ -4,15 +4,11 @@ import React from 'react';
 import { Icon } from '@/components/foundation/Icon';
 import { color } from '@/tokens/colors';
 import {
-  AcceptTransferScreen,
-  CoordinatorHandoffScreen,
   DocumentChecklistBuilderScreen,
   EditProfileScreen,
   FeedScreen,
   MemberDetailScreen,
-  NotificationPreferencesScreen,
   PostCreationScreen,
-  TeamSettingsScreen,
 } from '@/screens/labels';
 import { AvailabilityRosterScreen } from '@/screens/events/AvailabilityRosterScreen';
 import { AvailabilitySubmissionScreen } from '@/screens/events/AvailabilitySubmissionScreen';
@@ -26,6 +22,10 @@ import { TripReviewScreen } from '@/screens/events/TripReviewScreen';
 import { PostDetailScreen } from '@/screens/feed/PostDetailScreen';
 import { HomeScreen } from '@/screens/home/HomeScreen';
 import { TeamRosterScreen } from '@/screens/team/TeamRosterScreen';
+import { TeamSettingsScreen } from '@/screens/team/TeamSettingsScreen';
+import { CoordinatorHandoffScreen } from '@/screens/team/CoordinatorHandoffScreen';
+import { AcceptTransferScreen } from '@/screens/team/AcceptTransferScreen';
+import { NotificationPreferencesScreen } from '@/screens/team/NotificationPreferencesScreen';
 import { TextVariantDemoScreen } from '@/screens/TextVariantDemoScreen';
 import type {
   EventsStackParamList,

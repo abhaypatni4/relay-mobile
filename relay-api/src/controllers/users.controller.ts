@@ -29,6 +29,30 @@ const emergencyBody = z.object({
   staffNote: z.unknown().optional(),
 });
 
+const notificationPrefsBody = z.object({
+  tripUpdates: z.boolean(),
+  itineraryChanges: z.boolean(),
+  availability: z.boolean(),
+  selectionNotifications: z.boolean(),
+  feedPostsRequired: z.boolean(),
+  feedPostsGeneral: z.boolean(),
+  reminders: z.boolean(),
+  nudges: z.boolean(),
+  urgentAlerts: z.boolean(),
+});
+
+const defaultPrefs = {
+  tripUpdates: true,
+  itineraryChanges: true,
+  availability: true,
+  selectionNotifications: true,
+  feedPostsRequired: true,
+  feedPostsGeneral: true,
+  reminders: true,
+  nudges: true,
+  urgentAlerts: true,
+};
+
 export const usersController = {
   getMe: async (req: Request, res: Response): Promise<void> => {
     if (!req.user) {
@@ -131,5 +155,42 @@ export const usersController = {
       data: { pushToken: parsed.data.pushToken },
     });
     res.status(204).send();
+  },
+
+  getNotificationPreferences: async (req: Request, res: Response): Promise<void> => {
+    if (!req.user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { notificationPreferences: true },
+    });
+    const prefs =
+      user?.notificationPreferences && typeof user.notificationPreferences === 'object'
+        ? { ...defaultPrefs, ...(user.notificationPreferences as Record<string, boolean>) }
+        : defaultPrefs;
+    res.status(200).json(prefs);
+  },
+
+  patchNotificationPreferences: async (req: Request, res: Response): Promise<void> => {
+    if (!req.user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const parsed = notificationPrefsBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Invalid body' });
+      return;
+    }
+    const data = {
+      ...parsed.data,
+      urgentAlerts: true,
+    };
+    await prisma.user.update({
+      where: { id: req.user.userId },
+      data: { notificationPreferences: data },
+    });
+    res.status(200).json(data);
   },
 };

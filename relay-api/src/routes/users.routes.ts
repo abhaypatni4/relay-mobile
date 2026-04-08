@@ -11,5 +11,7 @@ export function createUsersRouter(env: Env): Router {
   r.patch('/me/emergency-info', auth, usersController.patchEmergencyInfo);
   r.post('/me/emergency-info/remind-later', auth, usersController.deferEmergencyReminder);
   r.patch('/me/push-token', auth, usersController.patchPushToken);
+  r.get('/me/notification-preferences', auth, usersController.getNotificationPreferences);
+  r.patch('/me/notification-preferences', auth, usersController.patchNotificationPreferences);
   return r;
 }

@@ -122,20 +122,36 @@ export function TeamRosterScreen(): React.ReactElement {
       return null;
     }
     return (
-      <Pressable
-        onPress={() => navigation.navigate('InviteMembers')}
-        style={{
-          marginBottom: spacing.space16,
-          padding: spacing.space12,
-          backgroundColor: color.actionPrimary,
-          borderRadius: 8,
-          alignItems: 'center',
-        }}
-      >
-        <Text variant="label" colorToken={color.actionOnPrimary}>
-          Invite members
-        </Text>
-      </Pressable>
+      <View>
+        <Pressable
+          onPress={() => navigation.navigate('InviteMembers')}
+          style={{
+            marginBottom: spacing.space12,
+            padding: spacing.space12,
+            backgroundColor: color.actionPrimary,
+            borderRadius: 8,
+            alignItems: 'center',
+          }}
+        >
+          <Text variant="label" colorToken={color.actionOnPrimary}>
+            Invite members
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => (navigation as unknown as { navigate: (name: string) => void }).navigate('TeamSettings')}
+          style={{
+            marginBottom: spacing.space16,
+            padding: spacing.space12,
+            backgroundColor: color.surfaceInput,
+            borderRadius: 8,
+            alignItems: 'center',
+          }}
+        >
+          <Text variant="label" colorToken={color.actionPrimary}>
+            Team settings
+          </Text>
+        </Pressable>
+      </View>
     );
   }, [isCoordinator, navigation]);
 
