@@ -5,9 +5,9 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import React, { useEffect, useRef } from 'react';
 import { View } from 'react-native';
-import { Text } from '@/components/foundation/Text';
 import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
+import { Text } from '@/components/foundation/Text';
 import { api } from '@/services/api';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
@@ -25,8 +25,8 @@ export function PostDetailScreen(): React.ReactElement {
   const q = useQuery({
     queryKey: ['postDetail', teamId, postId],
     queryFn: async () => {
-      const { data } = await api.get<Record<string, unknown>>(`/teams/${teamId}/posts/${postId}`);
-      return data;
+      const { data } = await api.get<{ post: Record<string, unknown> }>(`/teams/${teamId}/posts/${postId}`);
+      return data.post;
     },
     enabled: Boolean(teamId && postId),
     retry: false,
@@ -65,12 +65,10 @@ export function PostDetailScreen(): React.ReactElement {
   }
 
   const body =
-    typeof q.data?.body === 'string'
-      ? q.data.body
-      : typeof q.data?.content === 'string'
-        ? q.data.content
-        : null;
-  const title = typeof q.data?.title === 'string' ? q.data.title : 'Post';
+    typeof q.data?.content === 'string'
+      ? q.data.content
+      : null;
+  const title = typeof q.data?.type === 'string' ? String(q.data.type) : 'Post';
 
   return (
     <ScreenContainer scrollable>

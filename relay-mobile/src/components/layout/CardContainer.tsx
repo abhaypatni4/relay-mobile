@@ -20,6 +20,8 @@ export interface CardContainerProps {
   pressable?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
+  accessibilityRole?: 'button' | 'summary' | 'none';
 }
 
 export function CardContainer({
@@ -27,11 +29,15 @@ export function CardContainer({
   pressable = false,
   onPress,
   style,
+  accessibilityLabel,
+  accessibilityRole,
 }: CardContainerProps): React.ReactElement {
   if (pressable && onPress) {
     return (
       <Pressable
         onPress={onPress}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole={accessibilityRole ?? 'button'}
         style={({ pressed }) => [shadowStyle, pressed && { opacity: 0.92 }, style]}
       >
         {children}
