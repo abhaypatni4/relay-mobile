@@ -10,6 +10,7 @@
     "dev": "tsx watch src/index.ts",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:security": "vitest run src/integration/availability-player-medical.security.integration.test.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

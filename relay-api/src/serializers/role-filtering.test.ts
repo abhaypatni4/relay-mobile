@@ -50,11 +50,12 @@ describe('serializeAvailabilitySubmission', () => {
   };
 
   it('omits operational fields and medicallyRestricted for player viewer', () => {
-    const out = serializeAvailabilitySubmission('player', row);
+    const out = serializeAvailabilitySubmission('player', row, { selectionNotificationsSent: true });
     const json = JSON.stringify(out);
     expect(json).not.toContain('operationalStatus');
     expect(json).not.toContain('operationalStatusSetBy');
     expect(json).not.toContain('medicallyRestricted');
+    expect(out.selectionOutcome).toBe('notSelected');
   });
 
   it('includes operationalStatus for coach viewer', () => {
