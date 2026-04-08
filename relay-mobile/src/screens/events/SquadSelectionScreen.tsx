@@ -1,6 +1,6 @@
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, Switch, View } from 'react-native';
@@ -8,6 +8,7 @@ import { Text } from '@/components/foundation/Text';
 import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamMembers, type TeamRosterMemberRow } from '@/hooks/useTeamMembers';
 import { useTeamStore } from '@/store/teamStore';
 import { color } from '@/tokens/colors';
@@ -24,6 +25,12 @@ interface SquadAssignmentRow {
 }
 
 export function SquadSelectionScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('SquadSelectionScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<EventsStackParamList, 'SquadSelection'>>();
   const route = useRoute<RouteProp<EventsStackParamList, 'SquadSelection'>>();
   const { tripId, eventId } = route.params;

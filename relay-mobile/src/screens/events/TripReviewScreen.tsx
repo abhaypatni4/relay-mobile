@@ -1,6 +1,6 @@
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -8,6 +8,7 @@ import { Text } from '@/components/foundation/Text';
 import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTripDocuments } from '@/queries/useTripDocuments';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
@@ -39,6 +40,12 @@ function formatDeparture(iso: string | null): string {
 }
 
 export function TripReviewScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('TripReviewScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<EventsStackParamList, 'TripReview'>>();
   const route = useRoute<RouteProp<EventsStackParamList, 'TripReview'>>();
   const { eventId } = route.params;
@@ -91,6 +98,10 @@ export function TripReviewScreen(): React.ReactElement {
     setPublishing(true);
     try {
       await api.post(`/events/${eventId}/trip/publish`);
+      analytics.track('trip_published', {
+        squadSize: squadTravelingCount,
+        hasDocumentChecklist: documentItemCount > 0,
+      });
       await queryClient.invalidateQueries({ queryKey: ['teamEvents'] });
       await queryClient.invalidateQueries({ queryKey: ['tripWorkspace', eventId] });
       navigation.navigate('EventsList');
@@ -99,7 +110,7 @@ export function TripReviewScreen(): React.ReactElement {
     } finally {
       setPublishing(false);
     }
-  }, [eventId, navigation, queryClient]);
+  }, [documentItemCount, eventId, navigation, queryClient, squadTravelingCount]);
 
   const onSaveDraft = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ['teamEvents'] });

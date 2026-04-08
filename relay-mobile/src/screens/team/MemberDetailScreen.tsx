@@ -1,4 +1,5 @@
-import { useRoute } from '@react-navigation/native';
+import { analytics } from '@/services/analytics';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
@@ -19,6 +20,12 @@ function formatRole(role: string, customRoleLabel?: string): string {
 }
 
 export function MemberDetailScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('MemberDetailScreen');
+    }, []),
+  );
+
   const route = useRoute<RouteProp<TeamStackParamList, 'MemberDetail'>>();
   const teamId = useTeamStore((s) => s.activeTeamId);
   const role = useTeamStore((s) => s.role);

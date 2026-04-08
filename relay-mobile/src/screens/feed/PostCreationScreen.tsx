@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Text } from '@/components/foundation/Text';
 import { TextAreaInput } from '@/components/input/TextAreaInput';
@@ -15,6 +15,7 @@ import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import { usePublishPost } from '@/mutations/usePublishPost';
 import { loadPostDraft, savePostDraft, clearPostDraft, type PostDraftPayload } from '@/services/postDraftStorage';
+import { analytics } from '@/services/analytics';
 import type { PostType, RecipientGroup } from '@/types/models';
 import type { FeedStackParamList } from '@/types/navigation';
 import { canCreatePosts } from '@/utils/roles';
@@ -46,6 +47,12 @@ const typeOptions: { key: PostType; title: string; description: string }[] = [
 ];
 
 export function PostCreationScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('PostCreationScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<FeedStackParamList, 'PostCreation'>>();
   const { teamMemberId, role } = useCurrentMember();
   const teamId = useTeamStore((s) => s.activeTeamId);
@@ -127,6 +134,10 @@ export function PostCreationScreen(): React.ReactElement {
       },
       {
         onSuccess: () => {
+          analytics.track('post_published', {
+            postType: selectedType,
+            recipientCount: selectedGroup === 'fullTeam' ? 0 : 0,
+          });
           if (teamMemberId) {
             clearPostDraft(teamMemberId);
           }

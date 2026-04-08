@@ -10,6 +10,7 @@ import {
   type TripWorkspaceAckRef,
 } from '@/hooks/useTripAcknowledgment';
 import { useUiStore } from '@/store/uiStore';
+import { analytics } from '@/services/analytics';
 import { color } from '@/tokens/colors';
 import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
@@ -60,6 +61,9 @@ export function AcknowledgmentButton({
     });
     try {
       await acknowledge();
+      analytics.track('itinerary_acknowledged', {
+        isReacknowledgment: needsReacknowledgment,
+      });
     } catch (e: unknown) {
       setOptimisticConfirmed(false);
       if (axios.isAxiosError(e) && e.response?.status === 409) {
@@ -67,7 +71,7 @@ export function AcknowledgmentButton({
       }
       addToast('error', "Couldn't save — check your connection");
     }
-  }, [acknowledge, addToast, isOffline, needsAcknowledgment]);
+  }, [acknowledge, addToast, isOffline, needsAcknowledgment, needsReacknowledgment]);
 
   if (!tripWorkspace?.isPublished || currentMemberAssignment?.travelingStatus !== 'traveling') {
     return null;

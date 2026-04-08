@@ -1,6 +1,6 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -9,6 +9,7 @@ import { Text } from '@/components/foundation/Text';
 import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import type { ApiEventListItem } from '@/hooks/useTeamEvents';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useAvailability } from '@/queries/useAvailability';
@@ -53,6 +54,12 @@ function availabilityLabel(s: AvailabilityStatus | null): string {
 }
 
 export function EventDetailScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('EventDetailScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<EventsStackParamList, 'EventDetail'>>();
   const route = useRoute<RouteProp<EventsStackParamList, 'EventDetail'>>();
   const { eventId } = route.params;

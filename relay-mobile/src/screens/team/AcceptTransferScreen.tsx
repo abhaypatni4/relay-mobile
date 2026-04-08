@@ -1,6 +1,6 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { View } from 'react-native';
@@ -8,6 +8,7 @@ import { Text } from '@/components/foundation/Text';
 import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import { spacing } from '@/tokens/spacing';
@@ -22,6 +23,12 @@ type Transfer = {
 };
 
 export function AcceptTransferScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('AcceptTransferScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<TeamStackParamList, 'AcceptTransfer'>>();
   const route = useRoute<RouteProp<TeamStackParamList, 'AcceptTransfer'>>();
   const { transferId } = route.params;

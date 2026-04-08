@@ -1,6 +1,6 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -20,6 +20,7 @@ import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { DateTimePickerField } from '@/components/input/DateTimePicker';
 import { PreDepartureChecklistItem } from '@/components/role-specific/PreDepartureChecklistItem';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTripEventId } from '@/hooks/useTripEventId';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import {
@@ -103,6 +104,12 @@ function statusBadge(status: string): { label: string; fg: string; bg: string } 
 }
 
 export function TripDetailScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('TripDetailScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<EventsStackParamList, 'TripDetail'>>();
   const route = useRoute<RouteProp<EventsStackParamList, 'TripDetail'>>();
   const { tripId, eventId: paramEventId } = route.params;
@@ -312,6 +319,9 @@ export function TripDetailScreen(): React.ReactElement {
       await api.post(`/events/${eventId}/cancel`);
     },
     onSuccess: () => {
+      const daysUntilTrip =
+        eventRow?.date ? Math.max(0, Math.floor((new Date(`${eventRow.date}T00:00:00`).getTime() - Date.now()) / 86400000)) : 0;
+      analytics.track('trip_cancelled', { daysUntilTrip });
       void queryClient.invalidateQueries({ queryKey: ['teamEvents'] });
       if (teamId && eventId) {
         void queryClient.invalidateQueries({ queryKey: ['eventDetail', teamId, eventId] });
@@ -348,6 +358,7 @@ export function TripDetailScreen(): React.ReactElement {
       await api.post(`/events/${eventId}/postpone`, { newDate, newTime });
     },
     onSuccess: async () => {
+      analytics.track('trip_postponed', { hasNewDate: Boolean(postponeDepartureIso.trim()) });
       setPostponeSheetOpen(false);
       setPostponeDepartureIso('');
       addToast('success', 'Trip postponed. Members have been notified.');

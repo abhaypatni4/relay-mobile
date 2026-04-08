@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import { linking } from '@/navigation/linking.config';
 import { navigationRef } from '@/navigation/navigationRef';
 import { useUiStore } from '@/store/uiStore';
+import { analytics } from '@/services/analytics';
 import { api } from './api';
 
 export type NotificationDataPayload = {
@@ -64,6 +65,12 @@ export function attachNotificationListeners(): { remove: () => void } {
   const subResponse = Notifications.addNotificationResponseReceivedListener((response) => {
     const data = response.notification.request.content.data as NotificationDataPayload | undefined;
     const deepLink = data?.deepLink;
+    const notificationType = data?.type;
+    if (notificationType === 'SELECTION_SELECTED' || notificationType === 'SELECTION_NOT_SELECTED') {
+      analytics.track('selection_notification_opened', {
+        selectionResult: notificationType === 'SELECTION_SELECTED' ? 'selected' : 'notSelected',
+      });
+    }
     if (typeof deepLink === 'string') {
       navigateFromDeepLink(deepLink);
     }

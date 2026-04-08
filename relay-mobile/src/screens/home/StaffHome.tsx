@@ -1,5 +1,5 @@
 import type { CompositeNavigationProp } from '@react-navigation/native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo } from 'react';
@@ -7,6 +7,7 @@ import { View } from 'react-native';
 import { Text } from '@/components/foundation/Text';
 import { EventCard, eventStartDate } from '@/components/data-display/EventCard';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamEvents, type ApiEventListItem } from '@/hooks/useTeamEvents';
 import { useTeamStore } from '@/store/teamStore';
 import { color } from '@/tokens/colors';
@@ -19,6 +20,12 @@ type HomeNav = CompositeNavigationProp<
 >;
 
 export function StaffHome(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('StaffHome');
+    }, []),
+  );
+
   const navigation = useNavigation<HomeNav>();
   const teamId = useTeamStore((s) => s.activeTeamId);
   const { data: events = [], isLoading } = useTeamEvents(teamId);

@@ -1,3 +1,5 @@
+import { useFocusEffect } from '@react-navigation/native';
+import { analytics } from '@/services/analytics';
 import React from 'react';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
@@ -7,6 +9,12 @@ import { PlayerHome } from '@/screens/home/PlayerHome';
 import { StaffHome } from '@/screens/home/StaffHome';
 
 export function HomeScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('HomeScreen');
+    }, []),
+  );
+
   const { role } = useCurrentMember();
 
   let body: React.ReactElement;

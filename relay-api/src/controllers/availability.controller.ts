@@ -13,6 +13,7 @@ import {
   submitAvailability,
   toSubmissionRow,
 } from '../services/availability.service';
+import { trackServerEvent } from '../services/analytics.service';
 import { prisma } from '../db/prisma';
 
 const submitBody = z.object({
@@ -182,6 +183,11 @@ export const availabilityController = {
       return;
     }
     const counts = await sendSelectionNotifications(req.eventRow.id, req.eventRow.name);
+    trackServerEvent('selection_notifications_sent', {
+      selectedCount: counts.selected,
+      notSelectedCount: counts.notSelected,
+      teamId: req.eventRow.teamId,
+    });
     res.status(200).json(counts);
   },
 };

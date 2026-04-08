@@ -1,6 +1,6 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import React, { useEffect, useRef } from 'react';
@@ -9,12 +9,19 @@ import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Text } from '@/components/foundation/Text';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import { spacing } from '@/tokens/spacing';
 import type { FeedStackParamList } from '@/types/navigation';
 
 export function PostDetailScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('PostDetailScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<FeedStackParamList, 'PostDetail'>>();
   const route = useRoute<RouteProp<FeedStackParamList, 'PostDetail'>>();
   const { postId } = route.params;

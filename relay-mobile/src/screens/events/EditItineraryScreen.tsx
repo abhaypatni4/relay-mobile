@@ -1,6 +1,6 @@
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutAnimation, Platform, Pressable, UIManager, View } from 'react-native';
 import { Text } from '@/components/foundation/Text';
@@ -10,6 +10,7 @@ import { DateTimePickerField } from '@/components/input/DateTimePicker';
 import { TextInput } from '@/components/input/TextInput';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import {
   clearItineraryDraft,
   loadItineraryDraft,
@@ -68,6 +69,12 @@ function toPayload(
 }
 
 export function EditItineraryScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('EditItineraryScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<EventsStackParamList, 'EditItinerary'>>();
   const route = useRoute<RouteProp<EventsStackParamList, 'EditItinerary'>>();
   const { tripId, eventId } = route.params;

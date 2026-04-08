@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { FlatList, View } from 'react-native';
@@ -8,6 +8,7 @@ import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { ConfirmationSheet } from '@/components/overlay/ConfirmationSheet';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import { spacing } from '@/tokens/spacing';
@@ -16,6 +17,12 @@ import type { TeamStackParamList } from '@/types/navigation';
 type Member = { id: string; name: string; role: string; onboardingState: string };
 
 export function CoordinatorHandoffScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('CoordinatorHandoffScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<TeamStackParamList, 'CoordinatorHandoff'>>();
   const teamId = useTeamStore((s) => s.activeTeamId);
   const currentMemberId = useTeamStore((s) => s.activeTeamMemberId);

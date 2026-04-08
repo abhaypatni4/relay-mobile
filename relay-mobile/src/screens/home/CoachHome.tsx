@@ -1,5 +1,5 @@
 import type { CompositeNavigationProp } from '@react-navigation/native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo } from 'react';
@@ -8,6 +8,7 @@ import { Text } from '@/components/foundation/Text';
 import { AvailabilitySummaryCard } from '@/components/data-display/AvailabilitySummaryCard';
 import { EventCard, eventStartDate } from '@/components/data-display/EventCard';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamEvents, type ApiEventListItem } from '@/hooks/useTeamEvents';
 import { useOpenAvailabilityWindow } from '@/mutations/useOpenAvailabilityWindow';
 import { useAvailability } from '@/queries/useAvailability';
@@ -22,6 +23,12 @@ type HomeNav = CompositeNavigationProp<
 >;
 
 export function CoachHome(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('CoachHome');
+    }, []),
+  );
+
   const navigation = useNavigation<HomeNav>();
   const teamId = useTeamStore((s) => s.activeTeamId);
   const { data: events = [], isLoading } = useTeamEvents(teamId);

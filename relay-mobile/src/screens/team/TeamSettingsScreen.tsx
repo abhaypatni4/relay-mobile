@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -9,6 +9,7 @@ import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { TextInput } from '@/components/input/TextInput';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import { spacing } from '@/tokens/spacing';
@@ -16,6 +17,12 @@ import { color } from '@/tokens/colors';
 import type { TeamStackParamList } from '@/types/navigation';
 
 export function TeamSettingsScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('TeamSettingsScreen');
+    }, []),
+  );
+
   const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
   const navigation = useNavigation<NativeStackNavigationProp<TeamStackParamList, 'TeamSettings'>>();
   const teamId = useTeamStore((s) => s.activeTeamId);

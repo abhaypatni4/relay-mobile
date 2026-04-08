@@ -1,5 +1,5 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, Share, View } from 'react-native';
@@ -7,6 +7,7 @@ import { Text } from '@/components/foundation/Text';
 import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import { color } from '@/tokens/colors';
@@ -21,6 +22,12 @@ interface InvitationResponse {
 }
 
 export function InviteMembersScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('InviteMembersScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList, 'InviteMembers'>>();
   const teamId = useTeamStore((s) => s.activeTeamId);
   const teamName = useTeamStore((s) => s.teamName);
@@ -62,6 +69,7 @@ export function InviteMembersScreen(): React.ReactElement {
       return;
     }
     const msg = `Join ${teamName ?? 'our team'} on Relay: ${deepLink}`;
+    analytics.track('invitation_sent', { method: 'link' });
     await Share.share({ message: msg, url: deepLink });
   }, [deepLink, teamName]);
 
@@ -70,6 +78,7 @@ export function InviteMembersScreen(): React.ReactElement {
       return;
     }
     await Clipboard.setStringAsync(deepLink);
+    analytics.track('invitation_sent', { method: 'link' });
     addToast('success', 'Link copied');
   }, [addToast, deepLink]);
 

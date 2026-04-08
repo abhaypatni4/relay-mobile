@@ -1,9 +1,11 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Text } from '@/components/foundation/Text';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useUiStore } from '@/store/uiStore';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
@@ -33,6 +35,12 @@ const labelMap: Array<{ key: keyof Prefs; label: string }> = [
 ];
 
 export function NotificationPreferencesScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('NotificationPreferencesScreen');
+    }, []),
+  );
+
   const addToast = useUiStore((s) => s.addToast);
   const prefsQuery = useQuery({
     queryKey: ['notificationPreferences'],

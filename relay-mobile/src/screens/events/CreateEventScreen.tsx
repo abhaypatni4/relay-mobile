@@ -1,5 +1,6 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import React, { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -35,7 +36,14 @@ const TYPES: { id: EventType; label: string }[] = [
 ];
 
 export function CreateEventScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('CreateEventScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<EventsStackParamList, 'CreateEvent'>>();
+  const queryClient = useQueryClient();
   const teamId = useTeamStore((s) => s.activeTeamId);
   const [eventType, setEventType] = useState<EventType>('trip');
   const [name, setName] = useState('');
@@ -52,6 +60,8 @@ export function CreateEventScreen(): React.ReactElement {
     }
     setLoading(true);
     try {
+      const existingEvents = (queryClient.getQueryData(['teamEvents', teamId]) as Array<unknown> | undefined) ?? [];
+      const isFirstEvent = existingEvents.length === 0;
       const { data } = await api.post<{
         event: { id: string };
         tripWorkspaceId: string | null;
@@ -62,7 +72,15 @@ export function CreateEventScreen(): React.ReactElement {
         startTime: toHHmm(startTimeIso),
         location: location.trim() || null,
       });
-      analytics.track(eventType === 'trip' ? 'trip_created' : 'first_event_created', { eventType });
+      if (eventType === 'trip') {
+        analytics.track('trip_created', {});
+      }
+      if (isFirstEvent) {
+        analytics.track('first_event_created', {
+          eventType,
+          deltaFromTeamCreation: 0,
+        });
+      }
       if (eventType === 'trip' && data.tripWorkspaceId) {
         navigation.replace('EditItinerary', {
           tripId: data.tripWorkspaceId,
@@ -78,7 +96,7 @@ export function CreateEventScreen(): React.ReactElement {
     } finally {
       setLoading(false);
     }
-  }, [eventDateIso, eventType, location, name, navigation, startTimeIso, teamId]);
+  }, [eventDateIso, eventType, location, name, navigation, queryClient, startTimeIso, teamId]);
 
   return (
     <ScreenContainer scrollable>

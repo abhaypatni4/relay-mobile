@@ -1,6 +1,6 @@
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import React, { useCallback, useMemo, useState } from 'react';
@@ -10,6 +10,7 @@ import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { TextInput } from '@/components/forms/TextInput';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { applyMembershipsToTeamStore, fetchMe } from '@/services/session';
 import { useAuthStore } from '@/store/authStore';
 import { color } from '@/tokens/colors';
@@ -17,6 +18,12 @@ import { spacing } from '@/tokens/spacing';
 import type { RootStackParamList } from '@/types/navigation';
 
 export function AcceptInviteScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('AcceptInviteScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'AcceptInvite'>>();
   const route = useRoute<RouteProp<RootStackParamList, 'AcceptInvite'>>();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -72,6 +79,7 @@ export function AcceptInviteScreen(): React.ReactElement {
         await api.post(`/invitations/${effectiveToken}/accept`, { role: 'player' });
         const me = await fetchMe();
         applyMembershipsToTeamStore(me.memberships);
+        analytics.track('invitation_accepted', {});
         navigation.reset({ index: 0, routes: [{ name: 'MainApp' }] });
         return;
       }

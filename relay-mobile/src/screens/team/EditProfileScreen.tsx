@@ -1,4 +1,4 @@
-import { useRoute } from '@react-navigation/native';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import React from 'react';
@@ -6,12 +6,19 @@ import { View } from 'react-native';
 import { Text } from '@/components/foundation/Text';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { fetchMe } from '@/services/session';
+import { analytics } from '@/services/analytics';
 import { color } from '@/tokens/colors';
 import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
 import type { TeamStackParamList } from '@/types/navigation';
 
 export function EditProfileScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('EditProfileScreen');
+    }, []),
+  );
+
   const route = useRoute<RouteProp<TeamStackParamList, 'EditProfile'>>();
   const { data, isPending } = useQuery({
     queryKey: ['users', 'me'],

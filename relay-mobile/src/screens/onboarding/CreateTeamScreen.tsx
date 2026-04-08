@@ -1,5 +1,5 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import React, { useCallback, useState } from 'react';
 import { View } from 'react-native';
@@ -26,6 +26,12 @@ interface CreateTeamResponse {
 }
 
 export function CreateTeamScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('CreateTeamScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList, 'CreateTeam'>>();
   const setTeamContext = useTeamStore((s) => s.setTeamContext);
   const [name, setName] = useState('');

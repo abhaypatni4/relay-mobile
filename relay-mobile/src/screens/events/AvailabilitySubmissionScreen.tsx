@@ -1,6 +1,6 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
@@ -13,6 +13,7 @@ import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useSubmitAvailability } from '@/mutations/useSubmitAvailability';
 import { useAvailability } from '@/queries/useAvailability';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import { color } from '@/tokens/colors';
@@ -45,6 +46,12 @@ function statusLabel(s: AvailabilityStatus): string {
 const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
 
 export function AvailabilitySubmissionScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('AvailabilitySubmissionScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<EventsStackParamList, 'AvailabilitySubmission'>>();
   const route = useRoute<RouteProp<EventsStackParamList, 'AvailabilitySubmission'>>();
   const { eventId } = route.params;
@@ -103,6 +110,12 @@ export function AvailabilitySubmissionScreen(): React.ReactElement {
       { availabilityStatus: picker, note: note.trim() ? note.trim() : null },
       {
         onSuccess: () => {
+          if (myRow?.availabilityStatus) {
+            analytics.track('availability_updated', {
+              previousStatus: myRow.availabilityStatus,
+              newStatus: picker,
+            });
+          }
           setInlineConfirm(`Got it — ${statusLabel(picker)} noted for ${evName}`);
           closeAfterConfirm();
         },

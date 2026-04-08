@@ -1,4 +1,5 @@
 import { prisma } from '../db/prisma';
+import { trackServerEvent } from './analytics.service';
 import { sendToMultiple } from './notification.service';
 
 const TRANSFER_TTL_MS = 48 * 60 * 60 * 1000;
@@ -187,6 +188,7 @@ export async function respondToTransfer(input: {
   if (!view) {
     return { ok: false as const, code: 'FORBIDDEN' as const };
   }
+  trackServerEvent('coordinator_handoff_completed', { teamId });
   return { ok: true as const, transfer: view };
 }
 

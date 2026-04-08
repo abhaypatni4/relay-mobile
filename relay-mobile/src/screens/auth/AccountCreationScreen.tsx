@@ -1,6 +1,6 @@
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import axios from 'axios';
 import React, { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -28,6 +28,12 @@ interface RegisterResponse {
 }
 
 export function AccountCreationScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('AccountCreationScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'AccountCreation'>>();
   const route = useRoute<RouteProp<RootStackParamList, 'AccountCreation'>>();
   const invitationToken = route.params?.invitationToken;

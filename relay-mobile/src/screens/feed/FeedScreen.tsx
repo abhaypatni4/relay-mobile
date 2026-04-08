@@ -1,7 +1,8 @@
+import { analytics } from '@/services/analytics';
 import React from 'react';
 import { FlatList, Pressable, View } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { Text } from '@/components/foundation/Text';
@@ -17,6 +18,12 @@ import type { FeedStackParamList } from '@/types/navigation';
 import { canCreatePosts } from '@/utils/roles';
 
 export function FeedScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('FeedScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<FeedStackParamList, 'Feed'>>();
   const { role } = useCurrentMember();
   const isOffline = useUiStore((s) => s.isOffline);

@@ -1,5 +1,5 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import React, { useCallback, useState } from 'react';
 import { Pressable } from 'react-native';
@@ -8,6 +8,7 @@ import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { TextInput } from '@/components/forms/TextInput';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { applyMembershipsToTeamStore, type MeMembership } from '@/services/session';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
@@ -28,6 +29,12 @@ function flattenFieldErrors(fields: Record<string, string[] | undefined>): Recor
 }
 
 export function EmergencyInfoPromptScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('EmergencyInfoPromptScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList, 'EmergencyInfoPrompt'>>();
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
@@ -52,6 +59,8 @@ export function EmergencyInfoPromptScreen(): React.ReactElement {
         staffNote: staffNote.trim() || undefined,
       });
       applyMembershipsToTeamStore(data.memberships);
+      analytics.track('emergency_info_completed', { isFirstTime: true });
+      analytics.track('onboarding_complete', { durationSeconds: 0 });
       goHome();
     } catch (e: unknown) {
       if (
@@ -75,6 +84,7 @@ export function EmergencyInfoPromptScreen(): React.ReactElement {
     setDeferLoading(true);
     try {
       await api.post('/users/me/emergency-info/remind-later');
+      analytics.track('emergency_info_skipped', {});
     } catch {
       // still send user home; reminder is best-effort
     } finally {

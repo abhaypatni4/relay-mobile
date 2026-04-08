@@ -1,5 +1,5 @@
 import type { CompositeNavigationProp } from '@react-navigation/native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import { SelectionStatusCard } from '@/components/data-display/SelectionStatusCa
 import { eventStartDate } from '@/components/data-display/EventCard';
 import { PlayerTripCard, type TripCardData } from '@/components/data-display/TripCard';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useAvailability } from '@/queries/useAvailability';
 import { useTeamEvents, type ApiEventListItem } from '@/hooks/useTeamEvents';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
@@ -32,6 +33,12 @@ interface TripWorkspaceBrief {
 }
 
 export function PlayerHome(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('PlayerHome');
+    }, []),
+  );
+
   const navigation = useNavigation<HomeNav>();
   const teamId = useTeamStore((s) => s.activeTeamId);
   const { teamMemberId } = useCurrentMember();

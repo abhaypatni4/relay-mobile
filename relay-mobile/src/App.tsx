@@ -2,6 +2,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import * as Sentry from '@sentry/react-native';
 import NetInfo from '@react-native-community/netinfo';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -31,7 +32,7 @@ Sentry.init({
 export default function App(): React.ReactElement {
   const [queryClient] = useState(() => createAppQueryClient());
   const wasOffline = useRef(false);
-  const currentScreen = useRef<string>('');
+  const offlineStartedAt = useRef<number | null>(null);
 
   useEffect(() => {
     analytics.configure({
@@ -56,6 +57,15 @@ export default function App(): React.ReactElement {
   }, [queryClient]);
 
   useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        analytics.track('app_opened', { isFromNotification: false });
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  useEffect(() => {
     configureNotificationPresentation();
     void ensureAndroidNotificationChannel();
     const listeners = attachNotificationListeners();
@@ -69,11 +79,16 @@ export default function App(): React.ReactElement {
       const store = useUiStore.getState();
       if (wasOffline.current && !offline) {
         store.addToast('success', 'Back online');
-        analytics.track('offline_mode_exited');
+        const durationSeconds = offlineStartedAt.current
+          ? Math.max(0, Math.floor((Date.now() - offlineStartedAt.current) / 1000))
+          : 0;
+        analytics.track('offline_mode_exited', { offlineDurationSeconds: durationSeconds });
         analytics.flushQueueOnReconnect();
+        offlineStartedAt.current = null;
       }
       if (!wasOffline.current && offline) {
         analytics.track('offline_mode_entered');
+        offlineStartedAt.current = Date.now();
       }
       wasOffline.current = offline;
       store.setOffline(offline);
@@ -115,21 +130,6 @@ export default function App(): React.ReactElement {
           <NavigationContainer
             ref={navigationRef}
             linking={linking}
-            onReady={() => {
-              const route = navigationRef.getCurrentRoute();
-              if (route?.name) {
-                currentScreen.current = route.name;
-                analytics.screen(route.name);
-              }
-            }}
-            onStateChange={() => {
-              const route = navigationRef.getCurrentRoute();
-              if (!route?.name || route.name === currentScreen.current) {
-                return;
-              }
-              currentScreen.current = route.name;
-              analytics.screen(route.name);
-            }}
           >
             <View style={{ flex: 1 }}>
               <OfflineBanner />

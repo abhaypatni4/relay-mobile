@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { serializePost, type PostForResponse } from '../serializers/post.serializer';
+import { trackServerEvent } from '../services/analytics.service';
 import {
   acknowledgePost,
   createPost,
@@ -142,6 +143,11 @@ export const postsController = {
       res.status(400).json({ error: 'Nudges are only valid for acknowledgment-required posts' });
       return;
     }
+    trackServerEvent('nudge_sent', {
+      overdueCount: out.nudgedCount,
+      teamId: req.member.teamId,
+      postId,
+    });
     res.status(200).json({ nudgedCount: out.nudgedCount });
   },
 

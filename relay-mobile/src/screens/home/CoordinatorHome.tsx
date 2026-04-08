@@ -1,5 +1,5 @@
 import type { CompositeNavigationProp } from '@react-navigation/native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { EventCard, eventStartDate } from '@/components/data-display/EventCard';
 import { CoordinatorTripCard, type TripCardData } from '@/components/data-display/TripCard';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamEvents, type ApiEventListItem } from '@/hooks/useTeamEvents';
 import { isAggregateDocumentsResponse, useTripDocuments } from '@/queries/useTripDocuments';
 import { useTeamStore } from '@/store/teamStore';
@@ -55,6 +56,12 @@ function buildTripCardData(
 }
 
 export function CoordinatorHome(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('CoordinatorHome');
+    }, []),
+  );
+
   const navigation = useNavigation<HomeNav>();
   const teamId = useTeamStore((s) => s.activeTeamId);
   const { data: events = [], isLoading } = useTeamEvents(teamId);

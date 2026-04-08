@@ -8,6 +8,7 @@ import { EventCard, eventStartDate } from '@/components/data-display/EventCard';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamEvents, type ApiEventListItem } from '@/hooks/useTeamEvents';
 import { useTeamStore } from '@/store/teamStore';
 import { color } from '@/tokens/colors';
@@ -24,6 +25,12 @@ interface EventSection {
 }
 
 export function EventsListScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('EventsListScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<Nav>();
   const teamId = useTeamStore((s) => s.activeTeamId);
   const role = useTeamStore((s) => s.role);

@@ -1,4 +1,5 @@
-import { useNavigation } from '@react-navigation/native';
+import { analytics } from '@/services/analytics';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useMemo } from 'react';
 import { FlatList, Pressable, View } from 'react-native';
@@ -35,6 +36,12 @@ function isPending(state: OnboardingState): boolean {
 }
 
 export function TeamRosterScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('TeamRosterScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const teamId = useTeamStore((s) => s.activeTeamId);
   const viewerRole = useTeamStore((s) => s.role);

@@ -1,5 +1,5 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import React, { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -9,6 +9,7 @@ import { TextInput } from '@/components/forms/TextInput';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api, saveAuthSession } from '@/services/api';
 import { bootstrapSessionAfterAuth } from '@/services/session';
+import { analytics } from '@/services/analytics';
 import { useAuthStore } from '@/store/authStore';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
@@ -22,6 +23,12 @@ interface LoginResponse {
 }
 
 export function LoginScreen(): React.ReactElement {
+  useFocusEffect(
+    React.useCallback(() => {
+      analytics.screen('LoginScreen');
+    }, []),
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Login'>>();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [identifier, setIdentifier] = useState('');
