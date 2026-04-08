@@ -201,71 +201,41 @@ export async function listChecklistItems(
     };
   }
 
-  // Coordinator and Coach: ALL items with aggregate status + confirmations array.
-  if (viewer.role === 'coordinator' || viewer.role === 'coach') {
-    const teamMembers = await prisma.teamMember.findMany({
-      where: { teamId: tw.event.teamId, removedAt: null },
-      include: { user: { select: { name: true } } },
+  // Non-player: ALL items with aggregate status + confirmations array.
+  const teamMembers = await prisma.teamMember.findMany({
+    where: { teamId: tw.event.teamId, removedAt: null },
+    include: { user: { select: { name: true } } },
+  });
+  const nameById = new Map(teamMembers.map((m) => [m.id, m.user.name]));
+  const onboardingById = new Map(teamMembers.map((m) => [m.id, m.onboardingState]));
+
+  const mapped = [];
+  for (const it of items) {
+    const applicableIds = await applicableMemberIdsForItem(tw.id, tw.event.teamId, {
+      applicability: it.applicability,
+      specificMemberIds: it.specificMemberIds,
     });
-    const nameById = new Map(teamMembers.map((m) => [m.id, m.user.name]));
-    const onboardingById = new Map(teamMembers.map((m) => [m.id, m.onboardingState]));
-
-    const totalApplicableForItem = async (it: {
-      applicability: DocumentApplicability;
-      specificMemberIds: string[];
-    }): Promise<number> => {
-      const ids = await applicableMemberIdsForItem(tw.id, tw.event.teamId, it);
-      return ids.length;
-    };
-
-    const mapped = [];
-    for (const it of items) {
-      const totalApplicable = await totalApplicableForItem({
-        applicability: it.applicability,
-        specificMemberIds: it.specificMemberIds,
-      });
-      const confirmations = it.confirmations.map((c) => ({
-        teamMemberId: c.teamMemberId,
-        memberName: nameById.get(c.teamMemberId) ?? 'Member',
-        confirmedAt: c.confirmedAt.toISOString(),
-        onboardingState: onboardingById.get(c.teamMemberId) ?? 'invited',
-      }));
-      mapped.push({
-        id: it.id,
-        name: it.name,
-        applicability: it.applicability,
-        specificMemberIds: it.specificMemberIds,
-        confirmedCount: confirmations.length,
-        totalApplicable,
-        confirmations,
-      });
-    }
-
-    return { ok: true, body: { items: mapped } };
+    const confirmedAtByMember = new Map(
+      it.confirmations.map((c) => [c.teamMemberId, c.confirmedAt] as const),
+    );
+    const confirmations = applicableIds.map((teamMemberId) => ({
+      teamMemberId,
+      memberName: nameById.get(teamMemberId) ?? 'Member',
+      confirmedAt: confirmedAtByMember.get(teamMemberId)?.toISOString() ?? null,
+      onboardingState: onboardingById.get(teamMemberId) ?? 'invited',
+    }));
+    mapped.push({
+      id: it.id,
+      name: it.name,
+      applicability: it.applicability,
+      specificMemberIds: it.specificMemberIds,
+      confirmedCount: confirmations.filter((c) => c.confirmedAt !== null).length,
+      totalApplicable: applicableIds.length,
+      confirmations,
+    });
   }
 
-  // Staff: same as player scope for now (own items), since staff does not view all members.
-  const applicable = items.filter((it) =>
-    isApplicableForMember(
-      { applicability: it.applicability, specificMemberIds: it.specificMemberIds },
-      viewer.id,
-      isTraveling,
-    ),
-  );
-  return {
-    ok: true,
-    body: {
-      items: applicable.map((it) => {
-        const conf = it.confirmations.find((c) => c.teamMemberId === viewer.id) ?? null;
-        return {
-          id: it.id,
-          name: it.name,
-          isConfirmedByCurrentUser: Boolean(conf),
-            confirmedAt: conf?.confirmedAt.toISOString() ?? null,
-        };
-      }),
-    },
-  };
+  return { ok: true, body: { items: mapped } };
 }
 
 export async function confirmChecklistItem(
