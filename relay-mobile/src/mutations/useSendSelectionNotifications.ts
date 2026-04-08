@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 
@@ -10,6 +11,9 @@ export function useSendSelectionNotifications(eventId: string) {
 
   return useMutation({
     mutationFn: async () => {
+      if (useUiStore.getState().isOffline) {
+        analytics.track('offline_write_attempted', { actionType: 'selection_notify' });
+      }
       const { data } = await api.post<{ selected: number; notSelected: number; skipped: number }>(
         `/events/${eventId}/availability/notify`,
       );
@@ -22,6 +26,7 @@ export function useSendSelectionNotifications(eventId: string) {
       void queryClient.invalidateQueries({ queryKey: ['teamEvents', teamId] });
     },
     onError: () => {
+      analytics.track('write_action_failed', { actionType: 'selection_notify', retried: false });
       addToast('error', "Couldn't send notifications.");
     },
   });

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
@@ -15,7 +16,15 @@ export function useSubmitAvailability(eventId: string) {
 
   return useMutation({
     mutationFn: async (body: { availabilityStatus: AvailabilityStatus; note: string | null }) => {
+      if (useUiStore.getState().isOffline) {
+        analytics.track('offline_write_attempted', { actionType: 'availability_submit' });
+      }
       await api.post(`/events/${eventId}/availability/submit`, body);
+      analytics.track('availability_submitted', {
+        status: body.availabilityStatus,
+        hasNote: Boolean(body.note),
+        eventId,
+      });
     },
     onMutate: async (vars) => {
       const qk = ['eventAvailability', teamId, eventId] as const;
@@ -41,6 +50,7 @@ export function useSubmitAvailability(eventId: string) {
       return { previous };
     },
     onError: (err: unknown, _vars, ctx) => {
+      analytics.track('write_action_failed', { actionType: 'availability_submit', retried: false });
       const qk = ['eventAvailability', teamId, eventId] as const;
       if (ctx?.previous) {
         queryClient.setQueryData(qk, ctx.previous);

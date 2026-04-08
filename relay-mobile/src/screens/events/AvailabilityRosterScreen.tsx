@@ -165,6 +165,11 @@ export function AvailabilityRosterScreen(): React.ReactElement {
         <FlatList
           data={filtered}
           keyExtractor={(item) => item.id}
+          getItemLayout={(_data, index) => ({ length: 72, offset: 72 * index, index })}
+          removeClippedSubviews
+          windowSize={7}
+          maxToRenderPerBatch={10}
+          initialNumToRender={12}
           renderItem={({ item }) => (
             <SquadRosterRow
               memberName={item.memberName}

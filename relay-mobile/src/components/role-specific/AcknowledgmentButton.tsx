@@ -103,7 +103,7 @@ export function AcknowledgmentButton({
           minHeight: 48,
         }}
         accessibilityRole="text"
-        accessibilityLabel="Itinerary confirmed"
+        accessibilityLabel="Confirmed"
       >
         <Icon name="check" size={22} color={color.stateSuccess} />
         <Text variant="label" colorToken={color.stateSuccess} style={{ marginLeft: spacing.space8 }}>
@@ -136,7 +136,7 @@ export function AcknowledgmentButton({
           opacity: pressed && needsAcknowledgment ? 0.92 : 1,
         })}
         accessibilityRole="button"
-        accessibilityLabel="I've got it"
+        accessibilityLabel="I've got it, confirm itinerary"
       >
         <Text variant="label" colorToken={color.actionOnPrimary}>
           I&apos;ve got it

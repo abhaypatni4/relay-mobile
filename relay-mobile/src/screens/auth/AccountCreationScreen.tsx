@@ -9,6 +9,7 @@ import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { TextInput } from '@/components/forms/TextInput';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api, saveAuthSession } from '@/services/api';
+import { analytics, pseudonymizedUserId } from '@/services/analytics';
 import { applyMembershipsToTeamStore, fetchMe } from '@/services/session';
 import { useAuthStore } from '@/store/authStore';
 import { color } from '@/tokens/colors';
@@ -59,6 +60,11 @@ export function AccountCreationScreen(): React.ReactElement {
       const { data } = await api.post<RegisterResponse>('/auth/register', registerBody);
       await saveAuthSession(data.refreshToken, data.user.id);
       setAuth(data.user.id, data.accessToken);
+      analytics.track('account_created', { source: invitationToken ? 'invitation' : 'direct' });
+      const pseudo = pseudonymizedUserId(data.user.id);
+      if (pseudo) {
+        analytics.identify(pseudo, {});
+      }
 
       if (invitationToken) {
         const roleForAccept: Role =
@@ -80,6 +86,7 @@ export function AccountCreationScreen(): React.ReactElement {
         }
         const me = await fetchMe();
         applyMembershipsToTeamStore(me.memberships);
+        analytics.track('invitation_accepted');
       } else {
         const me = await fetchMe();
         applyMembershipsToTeamStore(me.memberships);

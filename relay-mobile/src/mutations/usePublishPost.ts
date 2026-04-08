@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import type { PostsResponse } from '@/queries/usePosts';
@@ -19,7 +20,19 @@ export function usePublishPost() {
       eventId: string | null;
       isUrgent: boolean;
     }) => {
+      if (useUiStore.getState().isOffline) {
+        analytics.track('offline_write_attempted', { actionType: 'post_publish' });
+      }
       const { data } = await api.post<{ postId: string }>(`/teams/${teamId}/posts`, body);
+      analytics.track('post_created', {
+        postType: body.type,
+        recipientGroup: body.recipientGroup,
+        isUrgent: body.isUrgent,
+        isDraft: false,
+      });
+      analytics.track('post_published', {
+        postType: body.type,
+      });
       return data;
     },
     onSuccess: async () => {
@@ -27,6 +40,7 @@ export function usePublishPost() {
       await queryClient.invalidateQueries({ queryKey: ['teamPosts', teamId] });
     },
     onError: (err: unknown) => {
+      analytics.track('write_action_failed', { actionType: 'post_publish', retried: false });
       if (axios.isAxiosError(err)) {
         const msg =
           typeof err.response?.data === 'object' &&

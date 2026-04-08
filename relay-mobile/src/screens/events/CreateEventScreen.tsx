@@ -9,6 +9,7 @@ import { DateTimePickerField } from '@/components/input/DateTimePicker';
 import { TextInput } from '@/components/input/TextInput';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamStore } from '@/store/teamStore';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
@@ -60,6 +61,7 @@ export function CreateEventScreen(): React.ReactElement {
         startTime: toHHmm(startTimeIso),
         location: location.trim() || null,
       });
+      analytics.track(eventType === 'trip' ? 'trip_created' : 'first_event_created', { eventType });
       if (eventType === 'trip' && data.tripWorkspaceId) {
         navigation.replace('EditItinerary', {
           tripId: data.tripWorkspaceId,

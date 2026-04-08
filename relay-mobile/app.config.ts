@@ -10,21 +10,37 @@ const config: ExpoConfig = {
   scheme: 'relay',
   newArchEnabled: true,
   splash: {
-    image: './assets/splash-icon.png',
+    image: './assets/splash.png',         // ← changed from splash-icon.png
     resizeMode: 'contain',
     backgroundColor: '#ffffff',
   },
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.relay.mobile',
+    buildNumber: '1',
+    infoPlist: {
+      CFBundleURLTypes: [
+        {
+          CFBundleURLSchemes: ['relay'],
+        },
+      ],
+    },
   },
   android: {
     package: 'com.relay.mobile',
+    versionCode: 1,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#ffffff',
+      backgroundColor: '#1A7A76',         // ← changed from #ffffff to Relay teal
     },
     edgeToEdgeEnabled: true,
+    intentFilters: [
+      {
+        action: 'VIEW',
+        data: [{ scheme: 'relay' }],
+        category: ['BROWSABLE', 'DEFAULT'],
+      },
+    ],
   },
   web: {
     favicon: './assets/favicon.png',

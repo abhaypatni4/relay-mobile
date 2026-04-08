@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useUiStore } from '@/store/uiStore';
 import type { TripDocumentsPlayerResponse } from '@/queries/useTripDocuments';
 
@@ -13,7 +14,11 @@ export function useConfirmDocument(eventId: string | null) {
       if (!eventId) {
         throw new Error('eventId required');
       }
+      if (useUiStore.getState().isOffline) {
+        analytics.track('offline_write_attempted', { actionType: 'document_confirm' });
+      }
       await api.post(`/events/${eventId}/trip/documents/${itemId}/confirm`);
+      analytics.track('document_item_confirmed', { eventId, itemId });
       return { itemId };
     },
     onMutate: async (itemId: string) => {
@@ -44,6 +49,7 @@ export function useConfirmDocument(eventId: string | null) {
       return { prev };
     },
     onError: (e: unknown, _itemId: string, ctx) => {
+      analytics.track('write_action_failed', { actionType: 'document_confirm', retried: false });
       if (eventId && ctx?.prev !== undefined) {
         queryClient.setQueryData(['tripDocuments', eventId], ctx.prev);
       }

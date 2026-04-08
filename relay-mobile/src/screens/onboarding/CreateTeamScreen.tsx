@@ -8,6 +8,7 @@ import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { TextInput } from '@/components/forms/TextInput';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamStore } from '@/store/teamStore';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
@@ -46,6 +47,7 @@ export function CreateTeamScreen(): React.ReactElement {
         sport: sport.trim() || null,
       });
       if (data.team) {
+        analytics.track('team_created', {});
         setTeamContext({
           activeTeamId: data.team.id,
           activeTeamMemberId: data.teamMemberId,

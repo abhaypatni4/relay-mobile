@@ -18,7 +18,10 @@ import {
   syncPushTokenIfPermissionGranted,
 } from '@/services/notifications';
 import { queryPersister } from '@/services/offlineCache';
+import { analytics, pseudonymizedUserId } from '@/services/analytics';
 import { createAppQueryClient } from '@/services/queryClient';
+import { useAuthStore } from '@/store/authStore';
+import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 
 Sentry.init({
@@ -28,6 +31,29 @@ Sentry.init({
 export default function App(): React.ReactElement {
   const [queryClient] = useState(() => createAppQueryClient());
   const wasOffline = useRef(false);
+  const currentScreen = useRef<string>('');
+
+  useEffect(() => {
+    analytics.configure({
+      getTeamSize: () => {
+        const activeTeamId = useTeamStore.getState().activeTeamId;
+        if (!activeTeamId) {
+          return null;
+        }
+        const members = queryClient.getQueryData<Array<{ onboardingState?: string }>>(['members', activeTeamId]);
+        if (!members) {
+          return null;
+        }
+        return members.filter((m) => m.onboardingState !== 'pending').length;
+      },
+    });
+    analytics.track('app_opened', { isFromNotification: false, notificationType: null });
+    const rawUserId = useAuthStore.getState().userId;
+    const pseudo = pseudonymizedUserId(rawUserId);
+    if (pseudo) {
+      analytics.identify(pseudo, {});
+    }
+  }, [queryClient]);
 
   useEffect(() => {
     configureNotificationPresentation();
@@ -43,6 +69,11 @@ export default function App(): React.ReactElement {
       const store = useUiStore.getState();
       if (wasOffline.current && !offline) {
         store.addToast('success', 'Back online');
+        analytics.track('offline_mode_exited');
+        analytics.flushQueueOnReconnect();
+      }
+      if (!wasOffline.current && offline) {
+        analytics.track('offline_mode_entered');
       }
       wasOffline.current = offline;
       store.setOffline(offline);
@@ -81,7 +112,25 @@ export default function App(): React.ReactElement {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
-          <NavigationContainer ref={navigationRef} linking={linking}>
+          <NavigationContainer
+            ref={navigationRef}
+            linking={linking}
+            onReady={() => {
+              const route = navigationRef.getCurrentRoute();
+              if (route?.name) {
+                currentScreen.current = route.name;
+                analytics.screen(route.name);
+              }
+            }}
+            onStateChange={() => {
+              const route = navigationRef.getCurrentRoute();
+              if (!route?.name || route.name === currentScreen.current) {
+                return;
+              }
+              currentScreen.current = route.name;
+              analytics.screen(route.name);
+            }}
+          >
             <View style={{ flex: 1 }}>
               <OfflineBanner />
               <View style={{ flex: 1 }}>

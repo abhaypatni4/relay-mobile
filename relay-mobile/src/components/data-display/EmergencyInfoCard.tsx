@@ -95,14 +95,14 @@ export function EmergencyInfoCard(props: {
             </Text>
           </Pressable>
         ) : (
-          <>
+          <View accessibilityRole="text" accessibilityLabel={phone ? `${phone}, call manually` : 'Not provided'}>
             <Text variant="body">{phone || 'Not provided'}</Text>
             {phone ? (
               <Text variant="caption" colorToken={color.textSecondary}>
                 Call manually — verify number
               </Text>
             ) : null}
-          </>
+          </View>
         )}
       </View>
 

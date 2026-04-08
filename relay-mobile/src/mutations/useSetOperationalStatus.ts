@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { api } from '@/services/api';
+import { analytics } from '@/services/analytics';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import type { AvailabilityResponse } from '@/queries/useAvailability';
@@ -13,7 +14,14 @@ export function useSetOperationalStatus(eventId: string) {
 
   return useMutation({
     mutationFn: async (input: { submissionId: string; operationalStatus: OperationalStatus }) => {
+      if (useUiStore.getState().isOffline) {
+        analytics.track('offline_write_attempted', { actionType: 'operational_status_set' });
+      }
       await api.patch(`/events/${eventId}/availability/${input.submissionId}/operational`, {
+        operationalStatus: input.operationalStatus,
+      });
+      analytics.track('operational_status_set', {
+        eventId,
         operationalStatus: input.operationalStatus,
       });
     },
@@ -32,6 +40,7 @@ export function useSetOperationalStatus(eventId: string) {
       return { previous };
     },
     onError: (err: unknown, _vars, ctx) => {
+      analytics.track('write_action_failed', { actionType: 'operational_status_set', retried: false });
       const qk = ['eventAvailability', teamId, eventId] as const;
       if (ctx?.previous) {
         queryClient.setQueryData(qk, ctx.previous);
