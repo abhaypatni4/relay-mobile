@@ -10,6 +10,7 @@ import type { RootStackParamList } from '@/types/navigation';
  * - Trip published / critical change / postponed / document reminder: relay://trips/:tripId (and optional ?section=…)
  * - TRIP_CANCELLED push uses relay://trips/:tripId (TripDetail cancelled state); IA table lists events/:eventId as alternate.
  * - Availability: events/:eventId/availability
+ * - SELECTION_SELECTED / SELECTION_NOT_SELECTED: events/:eventId → EventDetailScreen
  * - Posts / nudge: posts/:postId
  * - Transfer: transfers/:transferId (TeamTab)
  * - Emergency: profile/emergency

@@ -62,6 +62,7 @@ export default function App(): React.ReactElement {
           return (
             root === 'teamEvents' ||
             root === 'eventDetail' ||
+            root === 'eventAvailability' ||
             root === 'tripWorkspace' ||
             root === 'tripSquad' ||
             root === 'tripEventId' ||

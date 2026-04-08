@@ -12,6 +12,9 @@ export type TravelingStatus = 'traveling' | 'notTraveling' | 'unassigned';
 
 export type AvailabilityStatus = 'available' | 'limited' | 'unavailable';
 
+/** Player-safe selection state from GET /availability (no operationalStatus leak). */
+export type PlayerSelectionOutcome = 'selected' | 'notSelected' | 'pending';
+
 export type OperationalStatus =
   | 'selected'
   | 'notSelected'

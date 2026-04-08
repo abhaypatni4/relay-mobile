@@ -2,9 +2,9 @@ import { useIsFocused } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { useTeamStore } from '@/store/teamStore';
-import type { AvailabilityStatus, OperationalStatus, Role } from '@/types/models';
+import type { AvailabilityStatus, OperationalStatus, PlayerSelectionOutcome, Role } from '@/types/models';
 
-export type PlayerSelectionOutcome = 'selected' | 'notSelected' | 'pending';
+export type { PlayerSelectionOutcome };
 
 export interface AvailabilityWindowDto {
   id: string;

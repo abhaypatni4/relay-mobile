@@ -6,10 +6,11 @@ import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { Text } from '@/components/foundation/Text';
-import { CardContainer } from '@/components/layout/CardContainer';
+import { SelectionStatusCard } from '@/components/data-display/SelectionStatusCard';
 import { eventStartDate } from '@/components/data-display/EventCard';
 import { PlayerTripCard, type TripCardData } from '@/components/data-display/TripCard';
 import { api } from '@/services/api';
+import { useAvailability } from '@/queries/useAvailability';
 import { useTeamEvents, type ApiEventListItem } from '@/hooks/useTeamEvents';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useTeamStore } from '@/store/teamStore';
@@ -45,6 +46,19 @@ export function PlayerHome(): React.ReactElement {
   }, [events, now]);
 
   const upcomingTripIds = useMemo(() => upcomingTrips.map((e) => e.id), [upcomingTrips]);
+
+  const nextMatchOrTraining = useMemo(() => {
+    return [...events]
+      .filter((e) => (e.type === 'match' || e.type === 'training') && eventStartDate(e).getTime() >= now)
+      .sort((a, b) => eventStartDate(a).getTime() - eventStartDate(b).getTime())[0];
+  }, [events, now]);
+
+  const selectionAvail = useAvailability(nextMatchOrTraining?.id ?? null);
+  const selectionRow = useMemo(
+    () => selectionAvail.data?.submissions.find((s) => s.teamMemberId === teamMemberId),
+    [selectionAvail.data?.submissions, teamMemberId],
+  );
+  const selectionNotified = Boolean(selectionAvail.data?.window?.selectionNotificationsSentAt);
 
   const { data: travelingContext } = useQuery({
     queryKey: ['playerHomeTravelingTrip', teamId, teamMemberId, upcomingTripIds],
@@ -111,6 +125,16 @@ export function PlayerHome(): React.ReactElement {
     });
   };
 
+  const openSelectionEvent = () => {
+    if (!nextMatchOrTraining) {
+      return;
+    }
+    navigation.navigate('EventsTab', {
+      screen: 'EventDetail',
+      params: { eventId: nextMatchOrTraining.id },
+    });
+  };
+
   if (isLoading) {
     return (
       <View style={{ padding: spacing.space16 }}>
@@ -125,14 +149,14 @@ export function PlayerHome(): React.ReactElement {
     <View style={{ padding: spacing.space16 }}>
       {tripCardData ? <PlayerTripCard trip={tripCardData} onPress={openTrip} /> : null}
 
-      <CardContainer style={{ marginTop: spacing.space16 }}>
-        <Text variant="label" colorToken={color.textSecondary}>
-          Next match or event
-        </Text>
-        <Text variant="body" colorToken={color.textSecondary} style={{ marginTop: spacing.space8 }}>
-          Decision coming soon
-        </Text>
-      </CardContainer>
+      {nextMatchOrTraining ? (
+        <SelectionStatusCard
+          eventName={nextMatchOrTraining.name}
+          pending={!selectionNotified}
+          outcome={selectionRow?.selectionOutcome}
+          onPressToEvent={selectionNotified ? openSelectionEvent : undefined}
+        />
+      ) : null}
 
       <View style={{ marginTop: spacing.space8 }}>
         <Text variant="caption" colorToken={color.textSecondary}>
