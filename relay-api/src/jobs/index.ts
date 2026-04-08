@@ -33,6 +33,22 @@ export function startJobInfrastructure(env: Env): void {
     .catch((err: unknown) => {
       console.error('Failed to schedule overdueDetection.scan', err);
     });
+
+  void queues.transferExpiry
+    .add(
+      'transferExpiry.scan',
+      { at: Date.now() },
+      {
+        repeat: { every: 60 * 60 * 1000 },
+        jobId: 'transferExpiry.scan',
+        removeOnComplete: true,
+        attempts: 2,
+        backoff: { type: 'exponential', delay: 5000 },
+      },
+    )
+    .catch((err: unknown) => {
+      console.error('Failed to schedule transferExpiry.scan', err);
+    });
 }
 
 export function stopJobInfrastructure(): void {
