@@ -13,5 +13,6 @@ export function createUsersRouter(env: Env): Router {
   r.patch('/me/push-token', auth, usersController.patchPushToken);
   r.get('/me/notification-preferences', auth, usersController.getNotificationPreferences);
   r.patch('/me/notification-preferences', auth, usersController.patchNotificationPreferences);
+  r.delete('/me', auth, usersController.deleteMe);
   return r;
 }

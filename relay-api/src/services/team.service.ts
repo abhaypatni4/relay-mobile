@@ -101,6 +101,19 @@ export async function listTeamMembersWithUsers(teamId: string): Promise<MemberWi
   }));
 }
 
+export async function getTeamMemberById(teamId: string, memberId: string) {
+  return prisma.teamMember.findFirst({
+    where: { id: memberId, teamId, removedAt: null },
+  });
+}
+
+export async function softRemoveTeamMember(teamId: string, memberId: string): Promise<void> {
+  await prisma.teamMember.updateMany({
+    where: { id: memberId, teamId, removedAt: null },
+    data: { removedAt: new Date() },
+  });
+}
+
 export function toTeamMemberWithUser(row: MemberWithUserRow): import('../serializers/member.serializer').TeamMemberWithUser {
   return {
     id: row.id,

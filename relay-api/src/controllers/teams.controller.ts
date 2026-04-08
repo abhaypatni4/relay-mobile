@@ -3,8 +3,10 @@ import { z } from 'zod';
 import { serializeRosterMember } from '../serializers/member.serializer';
 import {
   createTeamForUser,
+  getTeamMemberById,
   getTeamById,
   listTeamMembersWithUsers,
+  softRemoveTeamMember,
   sortMembersForRoster,
   toTeamMemberWithUser,
   updateTeam,
@@ -116,5 +118,29 @@ export const teamsController = {
       homeLocation: team.homeLocation,
       createdAt: team.createdAt.toISOString(),
     });
+  },
+
+  removeMember: async (req: Request, res: Response): Promise<void> => {
+    const teamId = req.params.teamId;
+    const memberId = req.params.memberId;
+    const safeTeamId = Array.isArray(teamId) ? teamId[0] : teamId;
+    const safeMemberId = Array.isArray(memberId) ? memberId[0] : memberId;
+    if (!safeTeamId || !safeMemberId) {
+      res.status(400).json({ error: 'teamId and memberId required' });
+      return;
+    }
+
+    const member = await getTeamMemberById(safeTeamId, safeMemberId);
+    if (!member) {
+      res.status(404).json({ error: 'Member not found' });
+      return;
+    }
+    if (member.role === 'coordinator') {
+      res.status(400).json({ error: 'Cannot remove the coordinator. Transfer the role first.' });
+      return;
+    }
+
+    await softRemoveTeamMember(safeTeamId, safeMemberId);
+    res.status(204).send();
   },
 };

@@ -193,4 +193,44 @@ export const usersController = {
     });
     res.status(200).json(data);
   },
+
+  deleteMe: async (req: Request, res: Response): Promise<void> => {
+    if (!req.user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const now = new Date();
+    const anonymizedEmail = `deleted+${req.user.userId}@relay.invalid`;
+    const anonymizedPhone = `deleted-${req.user.userId}`;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: req.user!.userId },
+        data: {
+          deletionRequestedAt: now,
+          name: 'Deleted User',
+          email: anonymizedEmail,
+          phone: anonymizedPhone,
+          emergencyContactName: null,
+          emergencyContactPhone: null,
+          emergencyAllergyAlert: null,
+          emergencyStaffNote: null,
+          emergencyInfoUpdatedAt: null,
+          pushToken: null,
+        },
+      });
+
+      await tx.refreshToken.updateMany({
+        where: { userId: req.user!.userId, revokedAt: null },
+        data: { revokedAt: now },
+      });
+    });
+
+    const dueAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    console.info(
+      `[account-deletion] user=${req.user.userId} requestedAt=${now.toISOString()} dueAt=${dueAt.toISOString()}`,
+    );
+
+    res.status(200).json({ message: 'Your account has been scheduled for deletion' });
+  },
 };

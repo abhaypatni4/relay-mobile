@@ -25,6 +25,13 @@ export function createTeamsRouter(env: Env): Router {
 
   byTeam.get('/', auth, requireTeamMember, teamsController.getById);
   byTeam.get('/members', auth, requireTeamMember, teamsController.listMembers);
+  byTeam.delete(
+    '/members/:memberId',
+    auth,
+    requireTeamMember,
+    requireRole(['coordinator']),
+    teamsController.removeMember,
+  );
   byTeam.patch('/', auth, requireTeamMember, requireRole(['coordinator']), teamsController.patch);
   byTeam.post(
     '/invitations',
