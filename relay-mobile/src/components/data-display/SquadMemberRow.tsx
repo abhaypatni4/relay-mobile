@@ -1,5 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
+import { StatusDot } from '@/components/data-display/StatusDot';
 import { Text } from '@/components/foundation/Text';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
@@ -16,28 +17,14 @@ export interface SquadMemberRowProps {
   onboardingState?: OnboardingState;
 }
 
-function StatusDot({ colorToken }: { colorToken: string }): React.ReactElement {
-  return (
-    <View
-      style={{
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: colorToken,
-        marginRight: spacing.space8,
-      }}
-    />
-  );
-}
-
-function travelingDotColor(s: TravelingStatus): string {
+function travelingStatusDot(s: TravelingStatus): 'traveling' | 'notTraveling' | 'pending' {
   switch (s) {
     case 'traveling':
-      return color.stateSuccess;
+      return 'traveling';
     case 'notTraveling':
-      return color.textDisabled;
+      return 'notTraveling';
     default:
-      return color.stateWarning;
+      return 'pending';
   }
 }
 
@@ -68,7 +55,19 @@ export function SquadMemberRow({
       }}
     >
       {variant === 'staff' && travelingStatus ? (
-        <StatusDot colorToken={travelingDotColor(travelingStatus)} />
+        <View style={{ marginRight: spacing.space8 }}>
+          <StatusDot
+            status={travelingStatusDot(travelingStatus)}
+            size="sm"
+            accessibilityLabel={
+              travelingStatus === 'traveling'
+                ? 'Traveling'
+                : travelingStatus === 'notTraveling'
+                  ? 'Not Traveling'
+                  : 'Pending'
+            }
+          />
+        </View>
       ) : null}
       <View style={{ flex: 1 }}>
         <Text variant="body" style={{ fontWeight: '600' }}>
@@ -80,15 +79,10 @@ export function SquadMemberRow({
       </View>
       {variant === 'staff' && itineraryVersion !== undefined ? (
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: acked ? color.stateSuccess : color.stateWarning,
-              marginLeft: spacing.space8,
-            }}
-            accessibilityLabel={acked ? 'Itinerary acknowledged' : 'Acknowledgment needed'}
+          <StatusDot
+            status={acked ? 'acknowledged' : 'pending'}
+            size="sm"
+            accessibilityLabel={acked ? 'Acknowledged' : 'Pending'}
           />
         </View>
       ) : null}

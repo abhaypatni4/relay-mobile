@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
+import { StatusDot } from '@/components/data-display/StatusDot';
 import { Text } from '@/components/foundation/Text';
 import { Icon } from '@/components/foundation/Icon';
 import { color } from '@/tokens/colors';
@@ -13,39 +14,6 @@ export interface SquadRosterRowProps {
   note: string | null;
   operationalStatus: OperationalStatus;
   onPress: () => void;
-}
-
-function AvailabilityDot({ status }: { status: AvailabilityStatus | null }): React.ReactElement {
-  if (status === null) {
-    return (
-      <View
-        style={{
-          width: 12,
-          height: 12,
-          borderRadius: 6,
-          borderWidth: 2,
-          borderColor: color.textSecondary,
-          backgroundColor: 'transparent',
-        }}
-      />
-    );
-  }
-  const fill =
-    status === 'available'
-      ? color.stateSuccess
-      : status === 'limited'
-        ? color.stateWarning
-        : color.stateDestructive;
-  return (
-    <View
-      style={{
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        backgroundColor: fill,
-      }}
-    />
-  );
 }
 
 function availabilityLabel(status: AvailabilityStatus | null): string {
@@ -107,7 +75,11 @@ export function SquadRosterRow({
         borderColor: color.borderSubtle,
       }}
     >
-      <AvailabilityDot status={availabilityStatus} />
+      <StatusDot
+        status={availabilityStatus ?? 'notSubmitted'}
+        size="md"
+        accessibilityLabel={`${memberName}: ${availabilityLabel(availabilityStatus)}`}
+      />
       <View style={{ flex: 1, marginLeft: spacing.space12 }}>
         <Text variant="body" style={{ fontWeight: '600' }}>
           {memberName}
