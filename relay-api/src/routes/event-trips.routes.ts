@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { Env } from '../config/env';
 import { availabilityController } from '../controllers/availability.controller';
 import { tripDocumentsController } from '../controllers/trip-documents.controller';
+import { tripEmergencyController } from '../controllers/trip-emergency.controller';
 import { tripsController } from '../controllers/trips.controller';
 import { authenticateMiddleware } from '../middleware/authenticate';
 import { requireEventTeamMember } from '../middleware/requireEventTeamMember';
@@ -56,6 +57,7 @@ export function createEventTripsRouter(env: Env): Router {
   r.get('/:eventId/trip/squad', ...member, tripsController.getSquad);
   r.patch('/:eventId/trip/squad', ...member, requireRole(['coordinator']), tripsController.patchSquad);
   r.post('/:eventId/trip/publish', ...member, requireRole(['coordinator']), tripsController.publish);
+  r.get('/:eventId/trip/squad/:memberId/emergency', ...member, tripEmergencyController.getEmergencyInfo);
 
   // Document checklist
   r.get('/:eventId/trip/documents', ...member, tripDocumentsController.list);
