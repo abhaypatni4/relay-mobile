@@ -15,6 +15,24 @@ export function startJobInfrastructure(env: Env): void {
     startTransferExpiryWorker(createRedisConnection(env)),
     startEmergencyInfoReminderWorker(createRedisConnection(env)),
   ];
+
+  // Overdue detection runs every 30 minutes (BullMQ repeating job).
+  // Safe on restarts via stable jobId.
+  void queues.overdueDetection
+    .add(
+      'overdueDetection.scan',
+      { at: Date.now() },
+      {
+        repeat: { every: 30 * 60 * 1000 },
+        jobId: 'overdueDetection.scan',
+        removeOnComplete: true,
+        attempts: 2,
+        backoff: { type: 'exponential', delay: 5000 },
+      },
+    )
+    .catch((err: unknown) => {
+      console.error('Failed to schedule overdueDetection.scan', err);
+    });
 }
 
 export function stopJobInfrastructure(): void {
