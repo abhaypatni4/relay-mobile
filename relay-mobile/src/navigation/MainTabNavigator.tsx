@@ -10,18 +10,18 @@ import {
   DocumentChecklistBuilderScreen,
   EditProfileScreen,
   EventDetailScreen,
-  EventsListScreen,
   FeedScreen,
   MemberDetailScreen,
   NotificationPreferencesScreen,
   PostCreationScreen,
   PostDetailScreen,
   TeamSettingsScreen,
-  TripDetailScreen,
 } from '@/screens/labels';
 import { CreateEventScreen } from '@/screens/events/CreateEventScreen';
 import { EditItineraryScreen } from '@/screens/events/EditItineraryScreen';
+import { EventsListScreen } from '@/screens/events/EventsListScreen';
 import { SquadSelectionScreen } from '@/screens/events/SquadSelectionScreen';
+import { TripDetailScreen } from '@/screens/events/TripDetailScreen';
 import { TripReviewScreen } from '@/screens/events/TripReviewScreen';
 import { HomeScreen } from '@/screens/home/HomeScreen';
 import { TeamRosterScreen } from '@/screens/team/TeamRosterScreen';

@@ -12,9 +12,7 @@ function makeScreen(label: string): React.FC {
 }
 
 export const CreateFirstEventScreen = makeScreen('CreateFirstEventScreen');
-export const EventsListScreen = makeScreen('EventsListScreen');
 export const EventDetailScreen = makeScreen('EventDetailScreen');
-export const TripDetailScreen = makeScreen('TripDetailScreen');
 export const DocumentChecklistBuilderScreen = makeScreen('DocumentChecklistBuilderScreen');
 export const AvailabilitySubmissionScreen = makeScreen('AvailabilitySubmissionScreen');
 export const FeedScreen = makeScreen('FeedScreen');
