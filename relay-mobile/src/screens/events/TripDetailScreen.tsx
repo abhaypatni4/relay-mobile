@@ -9,12 +9,23 @@ import { AcknowledgmentButton } from '@/components/role-specific/AcknowledgmentB
 import { Text } from '@/components/foundation/Text';
 import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { SquadMemberRow } from '@/components/data-display/SquadMemberRow';
+import { CoordinatorChecklistItem, PlayerChecklistItem } from '@/components/data-display/ChecklistItem';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { ConfirmationSheet } from '@/components/overlay/ConfirmationSheet';
+import { BottomSheet } from '@/components/overlay/BottomSheet';
+import { TextInput } from '@/components/input/TextInput';
+import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { api } from '@/services/api';
 import { useTripEventId } from '@/hooks/useTripEventId';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
+import {
+  isAggregateDocumentsResponse,
+  type CoordinatorTripDocumentItem,
+  type PlayerTripDocumentItem,
+  useTripDocuments,
+} from '@/queries/useTripDocuments';
+import { useConfirmDocument } from '@/mutations/useConfirmDocument';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import { color } from '@/tokens/colors';
@@ -98,6 +109,15 @@ export function TripDetailScreen(): React.ReactElement {
   const listRef = useRef<FlatList>(null);
   const squadSectionY = useRef(0);
   const [cancelSheetOpen, setCancelSheetOpen] = useState(false);
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
+  const [breakdownItem, setBreakdownItem] = useState<CoordinatorTripDocumentItem | null>(null);
+  const [addItemOpen, setAddItemOpen] = useState(false);
+  const [addItemName, setAddItemName] = useState('');
+  const [addItemApplicability, setAddItemApplicability] = useState<'allPlayers' | 'travelingSquad' | 'specific'>(
+    'allPlayers',
+  );
+  const [specificSelected, setSpecificSelected] = useState<Record<string, boolean>>({});
+  const [confirmingItemId, setConfirmingItemId] = useState<string | null>(null);
   const handledUnavailable = useRef(false);
 
   const { eventId, isResolving, resolveError } = useTripEventId(teamId, tripId, paramEventId);
@@ -138,6 +158,74 @@ export function TripDetailScreen(): React.ReactElement {
   const staffVariant = role === 'coordinator' || role === 'coach' || role === 'staff';
 
   const isCancelled = eventRow?.status === 'cancelled';
+
+  const documentsQuery = useTripDocuments(eventId ?? null);
+  const confirmDocument = useConfirmDocument(eventId ?? null);
+
+  const addItemMutation = useMutation({
+    mutationFn: async () => {
+      if (!eventId) {
+        throw new Error('eventId required');
+      }
+      const specificMemberIds =
+        addItemApplicability === 'specific'
+          ? Object.entries(specificSelected)
+              .filter(([, v]) => v)
+              .map(([id]) => id)
+          : [];
+      await api.post(`/events/${eventId}/trip/documents`, {
+        name: addItemName.trim(),
+        applicability: addItemApplicability,
+        specificMemberIds,
+      });
+    },
+    onSuccess: async () => {
+      setAddItemOpen(false);
+      setAddItemName('');
+      setAddItemApplicability('allPlayers');
+      setSpecificSelected({});
+      await queryClient.invalidateQueries({ queryKey: ['tripDocuments', eventId] });
+    },
+    onError: () => {
+      addToast('error', "Couldn't save — check your connection and try again.");
+    },
+  });
+
+  const remindMutation = useMutation({
+    mutationFn: async () => {
+      if (!eventId) {
+        throw new Error('eventId required');
+      }
+      const { data } = await api.post<{ remindedCount: number }>(`/events/${eventId}/trip/documents/remind`);
+      return data.remindedCount;
+    },
+    onSuccess: (n: number) => {
+      addToast('success', `Reminder sent to ${n} members`);
+    },
+    onError: () => addToast('error', "Couldn't save — check your connection and try again."),
+  });
+
+  const documentsOutstanding = useMemo(() => {
+    const r = documentsQuery.data;
+    if (!r || r.items.length === 0) {
+      return 0;
+    }
+    if (isAggregateDocumentsResponse(r)) {
+      return r.items.reduce((acc, it) => acc + Math.max(0, it.totalApplicable - it.confirmedCount), 0);
+    }
+    return r.items.reduce((acc, it) => acc + (it.isConfirmedByCurrentUser ? 0 : 1), 0);
+  }, [documentsQuery.data]);
+
+  const hasOutstandingMembers = useMemo(() => {
+    const r = documentsQuery.data;
+    if (!r || r.items.length === 0) {
+      return false;
+    }
+    if (!isAggregateDocumentsResponse(r)) {
+      return false;
+    }
+    return documentsOutstanding > 0;
+  }, [documentsOutstanding, documentsQuery.data]);
 
   useEffect(() => {
     if (handledUnavailable.current) {
@@ -462,6 +550,97 @@ export function TripDetailScreen(): React.ReactElement {
               onboardingState={item.onboardingState}
             />
           )}
+          ListFooterComponent={
+            <View style={{ paddingHorizontal: spacing.space16, paddingTop: spacing.space24 }}>
+              <SectionHeader
+                title="Documents"
+                count={documentsOutstanding > 0 ? documentsOutstanding : undefined}
+                statusDotColor={documentsOutstanding === 0 && (documentsQuery.data?.items?.length ?? 0) > 0 ? color.stateSuccess : undefined}
+                statusDotA11yLabel={documentsOutstanding === 0 ? 'All confirmed' : undefined}
+                actionLabel={isCoordinator ? 'Add item' : undefined}
+                onActionPress={
+                  isCoordinator
+                    ? () => {
+                        if (isOffline) {
+                          addToast('error', 'Available when connected');
+                          return;
+                        }
+                        setAddItemOpen(true);
+                      }
+                    : undefined
+                }
+              />
+
+              {documentsQuery.isLoading ? (
+                <SkeletonLoader variant="card" style={{ marginBottom: spacing.space12 }} />
+              ) : isPlayer ? (
+                <>
+                  {!documentsQuery.data || documentsQuery.data.items.length === 0 ? (
+                    <Text variant="body" colorToken={color.textSecondary} style={{ paddingVertical: spacing.space12 }}>
+                      No documents required for you
+                    </Text>
+                  ) : (
+                    (documentsQuery.data.items as PlayerTripDocumentItem[]).map((it) => (
+                      <PlayerChecklistItem
+                        key={it.id}
+                        itemName={it.name}
+                        isConfirmed={it.isConfirmedByCurrentUser}
+                        isBlocked={Boolean(myAssignment && myAssignment.onboardingState !== 'active')}
+                        isConfirming={confirmingItemId === it.id && confirmDocument.status === 'pending'}
+                        onConfirm={() => {
+                          if (isOffline) {
+                            addToast('error', 'Available when connected');
+                            return;
+                          }
+                          setConfirmingItemId(it.id);
+                          void confirmDocument.mutateAsync(it.id).finally(() => setConfirmingItemId(null));
+                        }}
+                      />
+                    ))
+                  )}
+                </>
+              ) : staffVariant ? (
+                <>
+                  {!documentsQuery.data || documentsQuery.data.items.length === 0 ? (
+                    <Text variant="body" colorToken={color.textSecondary} style={{ paddingVertical: spacing.space12 }}>
+                      No documents required for this trip yet.
+                    </Text>
+                  ) : (
+                    (documentsQuery.data.items as CoordinatorTripDocumentItem[]).map((it) => (
+                      <CoordinatorChecklistItem
+                        key={it.id}
+                        itemName={it.name}
+                        confirmedCount={it.confirmedCount}
+                        totalApplicable={it.totalApplicable}
+                        onViewBreakdown={() => {
+                          setBreakdownItem(it);
+                          setBreakdownOpen(true);
+                        }}
+                      />
+                    ))
+                  )}
+                  {isCoordinator && hasOutstandingMembers ? (
+                    <View style={{ marginTop: spacing.space16 }}>
+                      <LoadingButton
+                        label="Remind members with outstanding items"
+                        isLoading={remindMutation.status === 'pending'}
+                        disabled={isOffline}
+                        onPress={() => {
+                          if (isOffline) {
+                            addToast('error', 'Available when connected');
+                            return;
+                          }
+                          void remindMutation.mutateAsync();
+                        }}
+                      />
+                    </View>
+                  ) : null}
+                </>
+              ) : null}
+
+              <View style={{ height: spacing.space32 }} />
+            </View>
+          }
           contentContainerStyle={{ paddingBottom: spacing.space32 }}
         />
       </View>
@@ -482,6 +661,119 @@ export function TripDetailScreen(): React.ReactElement {
           return cancelMutation.mutateAsync();
         }}
       />
+
+      <BottomSheet
+        visible={breakdownOpen}
+        onClose={() => {
+          setBreakdownOpen(false);
+          setBreakdownItem(null);
+        }}
+      >
+        <Text variant="title" style={{ marginBottom: spacing.space12 }}>
+          {breakdownItem?.name ?? 'Document'}
+        </Text>
+        {(breakdownItem?.confirmations ?? []).map((c) => {
+          const pending = c.onboardingState !== 'active';
+          const confirmed = c.confirmedAt !== null;
+          const status = pending ? 'Awaiting app setup' : confirmed ? 'Confirmed' : 'Not confirmed';
+          const fg = pending ? color.textSecondary : confirmed ? color.stateSuccess : color.stateWarning;
+          return (
+            <View
+              key={c.teamMemberId}
+              style={{
+                paddingVertical: spacing.space12,
+                borderBottomWidth: 1,
+                borderBottomColor: color.borderSubtle,
+              }}
+            >
+              <Text variant="body">{c.memberName}</Text>
+              <Text variant="caption" colorToken={fg}>
+                {status}
+              </Text>
+            </View>
+          );
+        })}
+      </BottomSheet>
+
+      <BottomSheet visible={addItemOpen} onClose={() => setAddItemOpen(false)}>
+        <Text variant="title" style={{ marginBottom: spacing.space12 }}>
+          Add document item
+        </Text>
+        <TextInput label="Item name" value={addItemName} onChangeText={setAddItemName} />
+
+        <Text variant="label" colorToken={color.textLabel} style={{ marginBottom: spacing.space8 }}>
+          Applies to
+        </Text>
+        {(['allPlayers', 'travelingSquad', 'specific'] as const).map((opt) => {
+          const selected = addItemApplicability === opt;
+          const label = opt === 'allPlayers' ? 'All players' : opt === 'travelingSquad' ? 'Traveling squad' : 'Specific members';
+          return (
+            <Pressable
+              key={opt}
+              onPress={() => setAddItemApplicability(opt)}
+              accessibilityRole="button"
+              style={{
+                paddingVertical: spacing.space12,
+                borderBottomWidth: 1,
+                borderBottomColor: color.borderSubtle,
+              }}
+            >
+              <Text variant="body" style={{ color: selected ? color.actionPrimary : color.textPrimary }}>
+                {label}
+              </Text>
+            </Pressable>
+          );
+        })}
+
+        {addItemApplicability === 'specific' ? (
+          <View style={{ marginTop: spacing.space12 }}>
+            <Text variant="label" colorToken={color.textSecondary} style={{ marginBottom: spacing.space8 }}>
+              Select members
+            </Text>
+            {travelingSquad.map((m) => {
+              const checked = Boolean(specificSelected[m.teamMemberId]);
+              return (
+                <Pressable
+                  key={m.teamMemberId}
+                  onPress={() =>
+                    setSpecificSelected((cur) => ({ ...cur, [m.teamMemberId]: !cur[m.teamMemberId] }))
+                  }
+                  accessibilityRole="button"
+                  style={{
+                    paddingVertical: spacing.space12,
+                    borderBottomWidth: 1,
+                    borderBottomColor: color.borderSubtle,
+                  }}
+                >
+                  <Text variant="body">
+                    {checked ? '✓ ' : ''}{m.memberName}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+
+        <View style={{ marginTop: spacing.space16 }}>
+          <LoadingButton
+            label="Add item"
+            isLoading={addItemMutation.status === 'pending'}
+            disabled={
+              isOffline ||
+              !addItemName.trim() ||
+              (addItemApplicability === 'specific' &&
+                Object.values(specificSelected).filter(Boolean).length === 0)
+            }
+            onPress={() => {
+              if (isOffline) {
+                addToast('error', 'Available when connected');
+                return;
+              }
+              void addItemMutation.mutateAsync();
+            }}
+          />
+        </View>
+      </BottomSheet>
     </ScreenContainer>
   );
 }

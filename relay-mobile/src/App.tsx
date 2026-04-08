@@ -64,6 +64,8 @@ export default function App(): React.ReactElement {
             root === 'eventDetail' ||
             root === 'eventAvailability' ||
             root === 'teamPosts' ||
+            root === 'tripDocuments' ||
+            root === 'emergencyInfo' ||
             root === 'tripWorkspace' ||
             root === 'tripSquad' ||
             root === 'tripEventId' ||

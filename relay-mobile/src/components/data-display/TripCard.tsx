@@ -141,9 +141,14 @@ export function PlayerTripCard({ trip, onPress }: PlayerTripCardProps): React.Re
 export interface CoordinatorTripCardProps {
   trip: TripCardData;
   onPress: () => void;
+  outstandingDocumentsCount?: number;
 }
 
-export function CoordinatorTripCard({ trip, onPress }: CoordinatorTripCardProps): React.ReactElement {
+export function CoordinatorTripCard({
+  trip,
+  onPress,
+  outstandingDocumentsCount = 0,
+}: CoordinatorTripCardProps): React.ReactElement {
   const pill = useMemo(() => statusPill(trip.eventStatus), [trip.eventStatus]);
   const showPill = trip.eventStatus === 'cancelled' || trip.eventStatus === 'postponed';
   const done = trip.acknowledgmentDone ?? 0;
@@ -182,7 +187,7 @@ export function CoordinatorTripCard({ trip, onPress }: CoordinatorTripCardProps)
         </Text>
       ) : null}
       <Text variant="caption" colorToken={color.textSecondary}>
-        Outstanding documents: 0
+        Outstanding documents: {outstandingDocumentsCount}
       </Text>
     </CardContainer>
   );

@@ -11,6 +11,7 @@ import { EventCard, eventStartDate } from '@/components/data-display/EventCard';
 import { CoordinatorTripCard, type TripCardData } from '@/components/data-display/TripCard';
 import { api } from '@/services/api';
 import { useTeamEvents, type ApiEventListItem } from '@/hooks/useTeamEvents';
+import { isAggregateDocumentsResponse, useTripDocuments } from '@/queries/useTripDocuments';
 import { useTeamStore } from '@/store/teamStore';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
@@ -120,6 +121,17 @@ export function CoordinatorHome(): React.ReactElement {
     return { done, total: pool.length };
   }, [squad, tw?.itineraryVersion]);
 
+  const documentsQuery = useTripDocuments(activeTripEvent?.id ?? null);
+  const outstandingDocuments = useMemo(() => {
+    if (!isAggregateDocumentsResponse(documentsQuery.data)) {
+      return 0;
+    }
+    return documentsQuery.data.items.reduce(
+      (acc, it) => acc + Math.max(0, it.totalApplicable - it.confirmedCount),
+      0,
+    );
+  }, [documentsQuery.data]);
+
   const hasUpcomingIn14Days = useMemo(
     () =>
       upcoming.some((e) => {
@@ -175,6 +187,7 @@ export function CoordinatorHome(): React.ReactElement {
       {showTripCard && activeTripEvent && tw ? (
         <CoordinatorTripCard
           trip={buildTripCardData(activeTripEvent, tw, ackCounts)}
+          outstandingDocumentsCount={outstandingDocuments}
           onPress={() => openTrip(buildTripCardData(activeTripEvent, tw, ackCounts))}
         />
       ) : nextAny ? (
@@ -190,7 +203,7 @@ export function CoordinatorHome(): React.ReactElement {
           {tw?.isPublished && ackCounts.total > 0 ? ackCounts.total - ackCounts.done : 0} pending
         </Text>
         <Text variant="body" colorToken={color.textSecondary}>
-          Documents: 0
+          Documents: {outstandingDocuments}
         </Text>
       </View>
 

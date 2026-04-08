@@ -7,6 +7,8 @@ import { spacing } from '@/tokens/spacing';
 export interface SectionHeaderProps {
   title: string;
   count?: number;
+  statusDotColor?: string;
+  statusDotA11yLabel?: string;
   actionLabel?: string;
   onActionPress?: () => void;
 }
@@ -14,6 +16,8 @@ export interface SectionHeaderProps {
 export function SectionHeader({
   title,
   count,
+  statusDotColor,
+  statusDotA11yLabel,
   actionLabel,
   onActionPress,
 }: SectionHeaderProps): React.ReactElement {
@@ -28,9 +32,23 @@ export function SectionHeader({
         paddingVertical: spacing.space4,
       }}
     >
-      <Text variant="label" colorToken={color.textPrimary}>
-        {heading}
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {statusDotColor ? (
+          <View
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: statusDotColor,
+              marginRight: spacing.space8,
+            }}
+            accessibilityLabel={statusDotA11yLabel ?? 'Status'}
+          />
+        ) : null}
+        <Text variant="label" colorToken={color.textPrimary}>
+          {heading}
+        </Text>
+      </View>
       {actionLabel && onActionPress ? (
         <Pressable onPress={onActionPress} accessibilityRole="button">
           <Text variant="label" colorToken={color.actionPrimary}>

@@ -8,6 +8,7 @@ import { Text } from '@/components/foundation/Text';
 import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
+import { useTripDocuments } from '@/queries/useTripDocuments';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
 import type { EventsStackParamList } from '@/types/navigation';
@@ -59,6 +60,9 @@ export function TripReviewScreen(): React.ReactElement {
     },
     enabled: Boolean(eventId),
   });
+
+  const documentsQuery = useTripDocuments(eventId);
+  const documentItemCount = useMemo(() => documentsQuery.data?.items?.length ?? 0, [documentsQuery.data?.items?.length]);
 
   const squadTravelingCount = useMemo(
     () => squad.filter((a) => a.travelingStatus === 'traveling').length,
@@ -130,6 +134,13 @@ export function TripReviewScreen(): React.ReactElement {
           Push notifications
         </Text>
         <Text variant="body">{notifyCount} recipients (active members only)</Text>
+      </View>
+
+      <View style={{ marginBottom: spacing.space24 }}>
+        <Text variant="label" colorToken={color.textSecondary}>
+          Documents
+        </Text>
+        <Text variant="body">{documentItemCount} items</Text>
       </View>
 
       {pendingInSquad ? (
