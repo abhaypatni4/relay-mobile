@@ -26,6 +26,7 @@ export type EventsStackParamList = {
   DocumentChecklistBuilder: { tripId: string };
   TripReview: { tripId: string; eventId: string };
   AvailabilitySubmission: { eventId: string };
+  AvailabilityRoster: { eventId: string };
 };
 
 export type FeedStackParamList = {

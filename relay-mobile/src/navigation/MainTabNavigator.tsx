@@ -14,6 +14,7 @@ import {
   PostCreationScreen,
   TeamSettingsScreen,
 } from '@/screens/labels';
+import { AvailabilityRosterScreen } from '@/screens/events/AvailabilityRosterScreen';
 import { AvailabilitySubmissionScreen } from '@/screens/events/AvailabilitySubmissionScreen';
 import { CreateEventScreen } from '@/screens/events/CreateEventScreen';
 import { EditItineraryScreen } from '@/screens/events/EditItineraryScreen';
@@ -70,6 +71,11 @@ function EventsStack(): React.ReactElement {
           presentation: 'fullScreenModal',
           title: 'Availability',
         }}
+      />
+      <EventsStackNav.Screen
+        name="AvailabilityRoster"
+        component={AvailabilityRosterScreen}
+        options={{ title: 'Availability roster' }}
       />
     </EventsStackNav.Navigator>
   );

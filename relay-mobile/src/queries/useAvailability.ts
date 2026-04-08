@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { useTeamStore } from '@/store/teamStore';
@@ -34,8 +35,13 @@ export interface AvailabilityResponse {
   submissions: AvailabilitySubmissionDto[];
 }
 
-export function useAvailability(eventId: string | null): ReturnType<typeof useQuery<AvailabilityResponse>> {
+export function useAvailability(
+  eventId: string | null,
+  options?: { pollEvery30sWhileFocused?: boolean },
+): ReturnType<typeof useQuery<AvailabilityResponse>> {
   const teamId = useTeamStore((s) => s.activeTeamId);
+  const focused = useIsFocused();
+  const poll = Boolean(options?.pollEvery30sWhileFocused && focused);
   return useQuery({
     queryKey: ['eventAvailability', teamId, eventId],
     queryFn: async () => {
@@ -43,5 +49,7 @@ export function useAvailability(eventId: string | null): ReturnType<typeof useQu
       return data;
     },
     enabled: Boolean(teamId && eventId),
+    refetchInterval: poll ? 30_000 : false,
+    refetchIntervalInBackground: false,
   });
 }
