@@ -7,9 +7,7 @@ import {
   AcceptTransferScreen,
   AvailabilitySubmissionScreen,
   CoordinatorHandoffScreen,
-  CreateEventScreen,
   DocumentChecklistBuilderScreen,
-  EditItineraryScreen,
   EditProfileScreen,
   EventDetailScreen,
   EventsListScreen,
@@ -18,11 +16,13 @@ import {
   NotificationPreferencesScreen,
   PostCreationScreen,
   PostDetailScreen,
-  SquadSelectionScreen,
   TeamSettingsScreen,
   TripDetailScreen,
-  TripReviewScreen,
 } from '@/screens/labels';
+import { CreateEventScreen } from '@/screens/events/CreateEventScreen';
+import { EditItineraryScreen } from '@/screens/events/EditItineraryScreen';
+import { SquadSelectionScreen } from '@/screens/events/SquadSelectionScreen';
+import { TripReviewScreen } from '@/screens/events/TripReviewScreen';
 import { HomeScreen } from '@/screens/home/HomeScreen';
 import { TeamRosterScreen } from '@/screens/team/TeamRosterScreen';
 import { TextVariantDemoScreen } from '@/screens/TextVariantDemoScreen';

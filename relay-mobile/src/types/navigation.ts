@@ -19,10 +19,10 @@ export type EventsStackParamList = {
   EventDetail: { eventId: string };
   TripDetail: { tripId: string; section?: 'itinerary' | 'documents' };
   CreateEvent: undefined;
-  EditItinerary: { tripId: string };
-  SquadSelection: { tripId: string };
+  EditItinerary: { tripId: string; eventId: string };
+  SquadSelection: { tripId: string; eventId: string };
   DocumentChecklistBuilder: { tripId: string };
-  TripReview: { tripId: string };
+  TripReview: { tripId: string; eventId: string };
   AvailabilitySubmission: { eventId: string };
 };
 
