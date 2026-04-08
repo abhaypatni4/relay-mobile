@@ -1,5 +1,7 @@
 import type { Prisma, TravelingStatus } from '@prisma/client';
 import { prisma } from '../db/prisma';
+import type { JsonObject } from '../serializers/base.serializer';
+import { serializeTripWorkspace } from '../serializers/event.serializer';
 import { sendToMultiple } from './notification.service';
 
 function departureTimeChanged(a: Date | null, b: Date | null): boolean {
@@ -324,4 +326,60 @@ export async function publishTrip(
   }
 
   return { tripWorkspaceId: tw.id, teamName, eventName };
+}
+
+export type AcknowledgeItineraryResult =
+  | { kind: 'ok' }
+  | { kind: 'conflict'; currentVersion: number; current: JsonObject }
+  | { kind: 'not_traveling' }
+  | { kind: 'not_found' };
+
+export async function acknowledgeTripItinerary(
+  eventId: string,
+  teamMemberId: string,
+  expectedVersion: number,
+): Promise<AcknowledgeItineraryResult> {
+  const tw = await prisma.tripWorkspace.findUnique({
+    where: { eventId },
+  });
+  if (!tw) {
+    return { kind: 'not_found' };
+  }
+  const assignment = await prisma.tripSquadAssignment.findUnique({
+    where: {
+      tripWorkspaceId_teamMemberId: {
+        tripWorkspaceId: tw.id,
+        teamMemberId,
+      },
+    },
+  });
+  if (!assignment) {
+    return { kind: 'not_found' };
+  }
+  if (assignment.travelingStatus !== 'traveling') {
+    return { kind: 'not_traveling' };
+  }
+  if (expectedVersion !== tw.itineraryVersion) {
+    const fresh = await prisma.tripWorkspace.findUnique({
+      where: { eventId },
+    });
+    if (!fresh) {
+      return { kind: 'not_found' };
+    }
+    return {
+      kind: 'conflict',
+      currentVersion: fresh.itineraryVersion,
+      current: serializeTripWorkspace(fresh),
+    };
+  }
+  await prisma.tripSquadAssignment.update({
+    where: {
+      tripWorkspaceId_teamMemberId: {
+        tripWorkspaceId: tw.id,
+        teamMemberId,
+      },
+    },
+    data: { acknowledgedItineraryVersion: tw.itineraryVersion },
+  });
+  return { kind: 'ok' };
 }

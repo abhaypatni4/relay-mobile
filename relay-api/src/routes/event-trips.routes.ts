@@ -12,6 +12,12 @@ export function createEventTripsRouter(env: Env): Router {
 
   r.get('/:eventId/trip', ...member, tripsController.getTrip);
   r.patch('/:eventId/trip/itinerary', ...member, requireRole(['coordinator']), tripsController.patchItinerary);
+  r.post(
+    '/:eventId/trip/itinerary/acknowledge',
+    ...member,
+    requireRole(['player']),
+    tripsController.acknowledgeItinerary,
+  );
   r.get('/:eventId/trip/squad', ...member, tripsController.getSquad);
   r.patch('/:eventId/trip/squad', ...member, requireRole(['coordinator']), tripsController.patchSquad);
   r.post('/:eventId/trip/publish', ...member, requireRole(['coordinator']), tripsController.publish);

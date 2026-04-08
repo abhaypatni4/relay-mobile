@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { TravelingStatus } from '@prisma/client';
 import { serializeTripWorkspace } from '../serializers/event.serializer';
 import {
+  acknowledgeTripItinerary,
   bulkPatchTripSquad,
   dispatchItineraryCriticalFieldNotifications,
   getTripWorkspaceByEventId,
@@ -36,6 +37,12 @@ const squadPatchBody = z.object({
     }),
   ),
 });
+
+const acknowledgeBody = z
+  .object({
+    expectedVersion: z.number().int(),
+  })
+  .strict();
 
 export const tripsController = {
   getTrip: async (req: Request, res: Response): Promise<void> => {
@@ -172,6 +179,41 @@ export const tripsController = {
         onboardingState: r.teamMember.onboardingState,
       })),
     });
+  },
+
+  acknowledgeItinerary: async (req: Request, res: Response): Promise<void> => {
+    const eventId = req.params.eventId;
+    const eid = Array.isArray(eventId) ? eventId[0] : eventId;
+    if (!eid || !req.member) {
+      res.status(400).json({ error: 'eventId required' });
+      return;
+    }
+    if (req.eventRow?.type !== 'trip') {
+      res.status(400).json({ error: 'Not a trip event' });
+      return;
+    }
+    const parsed = acknowledgeBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Invalid body' });
+      return;
+    }
+    const result = await acknowledgeTripItinerary(eid, req.member.id, parsed.data.expectedVersion);
+    if (result.kind === 'ok') {
+      res.status(200).end();
+      return;
+    }
+    if (result.kind === 'conflict') {
+      res.status(409).json({
+        currentVersion: result.currentVersion,
+        current: result.current,
+      });
+      return;
+    }
+    if (result.kind === 'not_traveling') {
+      res.status(400).json({ error: 'Not a traveling squad member' });
+      return;
+    }
+    res.status(404).json({ error: 'Not found' });
   },
 
   publish: async (req: Request, res: Response): Promise<void> => {
