@@ -10,6 +10,7 @@ import { Text } from '@/components/foundation/Text';
 import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { SquadMemberRow } from '@/components/data-display/SquadMemberRow';
 import { CoordinatorChecklistItem, PlayerChecklistItem } from '@/components/data-display/ChecklistItem';
+import { EmergencyInfoCard } from '@/components/data-display/EmergencyInfoCard';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { ConfirmationSheet } from '@/components/overlay/ConfirmationSheet';
@@ -26,6 +27,7 @@ import {
   useTripDocuments,
 } from '@/queries/useTripDocuments';
 import { useConfirmDocument } from '@/mutations/useConfirmDocument';
+import { useEmergencyInfo } from '@/queries/useEmergencyInfo';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import { color } from '@/tokens/colors';
@@ -118,6 +120,7 @@ export function TripDetailScreen(): React.ReactElement {
   );
   const [specificSelected, setSpecificSelected] = useState<Record<string, boolean>>({});
   const [confirmingItemId, setConfirmingItemId] = useState<string | null>(null);
+  const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
   const handledUnavailable = useRef(false);
 
   const { eventId, isResolving, resolveError } = useTripEventId(teamId, tripId, paramEventId);
@@ -266,6 +269,25 @@ export function TripDetailScreen(): React.ReactElement {
   );
 
   const travelingSquad = useMemo(() => squad.filter((a) => a.travelingStatus === 'traveling'), [squad]);
+
+  // Prefetch emergency info for offline access (staff variants only).
+  useEffect(() => {
+    if (!eventId || !trip?.id || !staffVariant || travelingSquad.length === 0) {
+      return;
+    }
+    if (isOffline) {
+      return;
+    }
+    for (const m of travelingSquad) {
+      void queryClient.prefetchQuery({
+        queryKey: ['emergencyInfo', trip.id, m.teamMemberId],
+        queryFn: async () => {
+          const { data } = await api.get(`/events/${eventId}/trip/squad/${m.teamMemberId}/emergency`);
+          return data;
+        },
+      });
+    }
+  }, [eventId, isOffline, queryClient, staffVariant, travelingSquad, trip?.id]);
 
   const ackSummary = useMemo(() => {
     const pool = travelingSquad.filter((a) => a.onboardingState === 'active');
@@ -540,15 +562,34 @@ export function TripDetailScreen(): React.ReactElement {
           keyExtractor={(item) => item.id}
           ListHeaderComponent={<View style={{ paddingBottom: spacing.space8 }}>{listHeader}</View>}
           renderItem={({ item }) => (
-            <SquadMemberRow
-              variant={isPlayer ? 'player' : 'staff'}
-              name={item.memberName}
-              role={item.memberRole}
-              travelingStatus={item.travelingStatus}
-              itineraryVersion={trip.itineraryVersion}
-              acknowledgedItineraryVersion={item.acknowledgedItineraryVersion}
-              onboardingState={item.onboardingState}
-            />
+            <View>
+              <Pressable
+                disabled={!staffVariant}
+                onPress={() => {
+                  if (!staffVariant) {
+                    return;
+                  }
+                  setExpandedMemberId((cur) => (cur === item.teamMemberId ? null : item.teamMemberId));
+                }}
+                accessibilityRole={staffVariant ? 'button' : undefined}
+              >
+                <SquadMemberRow
+                  variant={isPlayer ? 'player' : 'staff'}
+                  name={item.memberName}
+                  role={item.memberRole}
+                  travelingStatus={item.travelingStatus}
+                  itineraryVersion={trip.itineraryVersion}
+                  acknowledgedItineraryVersion={item.acknowledgedItineraryVersion}
+                  onboardingState={item.onboardingState}
+                />
+              </Pressable>
+
+              {staffVariant && expandedMemberId === item.teamMemberId ? (
+                <View style={{ paddingVertical: spacing.space12 }}>
+                  <EmergencyInfoInline eventId={eventId} tripWorkspaceId={trip.id} memberId={item.teamMemberId} />
+                </View>
+              ) : null}
+            </View>
           )}
           ListFooterComponent={
             <View style={{ paddingHorizontal: spacing.space16, paddingTop: spacing.space24 }}>
@@ -775,5 +816,54 @@ export function TripDetailScreen(): React.ReactElement {
         </View>
       </BottomSheet>
     </ScreenContainer>
+  );
+}
+
+function EmergencyInfoInline(props: {
+  eventId: string | null;
+  tripWorkspaceId: string | null;
+  memberId: string | null;
+}): React.ReactElement | null {
+  const { eventId, tripWorkspaceId, memberId } = props;
+  const isOffline = useUiStore((s) => s.isOffline);
+  const q = useEmergencyInfo({ eventId, tripWorkspaceId, memberId });
+
+  if (q.isLoading) {
+    return <SkeletonLoader variant="card" style={{ marginBottom: spacing.space12 }} />;
+  }
+
+  if (q.isError) {
+    const is404 = axios.isAxiosError(q.error) && q.error.response?.status === 404;
+    return (
+      <Text variant="body" colorToken={color.textSecondary}>
+        {is404 ? 'Emergency info not on file for this member.' : "Couldn't load — check your connection and try again."}
+      </Text>
+    );
+  }
+
+  if (!q.data) {
+    return null;
+  }
+
+  const lastSynced = q.dataUpdatedAt
+    ? new Intl.DateTimeFormat(undefined, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(q.dataUpdatedAt))
+    : null;
+
+  return (
+    <View>
+      <EmergencyInfoCard
+        contactName={q.data.contactName}
+        contactPhone={q.data.contactPhone}
+        allergyAlert={q.data.allergyAlert}
+        staffNote={q.data.staffNote}
+        updatedAt={q.data.updatedAt}
+        isStale={q.data.isStale}
+      />
+      {isOffline && lastSynced ? (
+        <Text variant="caption" colorToken={color.textSecondary} style={{ marginTop: spacing.space8 }}>
+          Last updated {lastSynced}
+        </Text>
+      ) : null}
+    </View>
   );
 }
