@@ -53,7 +53,21 @@ export default function App(): React.ReactElement {
     () => ({
       persister: queryPersister,
       dehydrateOptions: {
-        shouldDehydrateQuery: (q: { queryKey: readonly unknown[] }) => q.queryKey[0] !== 'auth',
+        /** First-slice trip/event/squad data for offline read (MMKV). */
+        shouldDehydrateQuery: (q: { queryKey: readonly unknown[] }) => {
+          const root = q.queryKey[0];
+          if (root === 'auth') {
+            return false;
+          }
+          return (
+            root === 'teamEvents' ||
+            root === 'eventDetail' ||
+            root === 'tripWorkspace' ||
+            root === 'tripSquad' ||
+            root === 'tripEventId' ||
+            root === 'playerHomeTravelingTrip'
+          );
+        },
       },
     }),
     [],

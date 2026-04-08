@@ -3,6 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { navigateToLogin } from '@/navigation/navigationRef';
 import { useAuthStore } from '@/store/authStore';
 import { useTeamStore } from '@/store/teamStore';
+import { useUiStore } from '@/store/uiStore';
 import { apiBaseUrl } from './env';
 
 const REFRESH_KEY = 'relay_refresh_token';
@@ -25,6 +26,13 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
+});
+
+api.interceptors.response.use((response) => {
+  if (!useUiStore.getState().isOffline) {
+    useUiStore.getState().setLastSyncedAt(Date.now());
+  }
+  return response;
 });
 
 let refreshPromise: Promise<string | null> | null = null;
