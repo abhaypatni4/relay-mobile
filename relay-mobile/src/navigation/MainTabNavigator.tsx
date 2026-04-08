@@ -5,7 +5,6 @@ import { Icon } from '@/components/foundation/Icon';
 import { color } from '@/tokens/colors';
 import {
   AcceptTransferScreen,
-  AvailabilitySubmissionScreen,
   CoordinatorHandoffScreen,
   DocumentChecklistBuilderScreen,
   EditProfileScreen,
@@ -15,6 +14,7 @@ import {
   PostCreationScreen,
   TeamSettingsScreen,
 } from '@/screens/labels';
+import { AvailabilitySubmissionScreen } from '@/screens/events/AvailabilitySubmissionScreen';
 import { CreateEventScreen } from '@/screens/events/CreateEventScreen';
 import { EditItineraryScreen } from '@/screens/events/EditItineraryScreen';
 import { EventDetailScreen } from '@/screens/events/EventDetailScreen';
@@ -66,6 +66,10 @@ function EventsStack(): React.ReactElement {
       <EventsStackNav.Screen
         name="AvailabilitySubmission"
         component={AvailabilitySubmissionScreen}
+        options={{
+          presentation: 'fullScreenModal',
+          title: 'Availability',
+        }}
       />
     </EventsStackNav.Navigator>
   );
