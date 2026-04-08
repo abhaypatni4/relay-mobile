@@ -3,13 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { Icon } from '@/components/foundation/Icon';
 import { color } from '@/tokens/colors';
-import {
-  DocumentChecklistBuilderScreen,
-  EditProfileScreen,
-  FeedScreen,
-  MemberDetailScreen,
-  PostCreationScreen,
-} from '@/screens/labels';
+import { DocumentChecklistBuilderScreen } from '@/screens/labels';
 import { AvailabilityRosterScreen } from '@/screens/events/AvailabilityRosterScreen';
 import { AvailabilitySubmissionScreen } from '@/screens/events/AvailabilitySubmissionScreen';
 import { CreateEventScreen } from '@/screens/events/CreateEventScreen';
@@ -19,8 +13,12 @@ import { EventsListScreen } from '@/screens/events/EventsListScreen';
 import { SquadSelectionScreen } from '@/screens/events/SquadSelectionScreen';
 import { TripDetailScreen } from '@/screens/events/TripDetailScreen';
 import { TripReviewScreen } from '@/screens/events/TripReviewScreen';
+import { FeedScreen } from '@/screens/feed/FeedScreen';
+import { PostCreationScreen } from '@/screens/feed/PostCreationScreen';
 import { PostDetailScreen } from '@/screens/feed/PostDetailScreen';
 import { HomeScreen } from '@/screens/home/HomeScreen';
+import { EditProfileScreen } from '@/screens/team/EditProfileScreen';
+import { MemberDetailScreen } from '@/screens/team/MemberDetailScreen';
 import { TeamRosterScreen } from '@/screens/team/TeamRosterScreen';
 import { TeamSettingsScreen } from '@/screens/team/TeamSettingsScreen';
 import { CoordinatorHandoffScreen } from '@/screens/team/CoordinatorHandoffScreen';
