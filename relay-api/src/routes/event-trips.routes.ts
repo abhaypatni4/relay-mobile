@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type { Env } from '../config/env';
 import { availabilityController } from '../controllers/availability.controller';
+import { tripDocumentsController } from '../controllers/trip-documents.controller';
 import { tripsController } from '../controllers/trips.controller';
 import { authenticateMiddleware } from '../middleware/authenticate';
 import { requireEventTeamMember } from '../middleware/requireEventTeamMember';
@@ -55,6 +56,28 @@ export function createEventTripsRouter(env: Env): Router {
   r.get('/:eventId/trip/squad', ...member, tripsController.getSquad);
   r.patch('/:eventId/trip/squad', ...member, requireRole(['coordinator']), tripsController.patchSquad);
   r.post('/:eventId/trip/publish', ...member, requireRole(['coordinator']), tripsController.publish);
+
+  // Document checklist
+  r.get('/:eventId/trip/documents', ...member, tripDocumentsController.list);
+  r.post(
+    '/:eventId/trip/documents',
+    ...member,
+    requireRole(['coordinator']),
+    tripDocumentsController.addItem,
+  );
+  r.post('/:eventId/trip/documents/:itemId/confirm', ...member, tripDocumentsController.confirm);
+  r.delete(
+    '/:eventId/trip/documents/:itemId',
+    ...member,
+    requireRole(['coordinator']),
+    tripDocumentsController.deleteItem,
+  );
+  r.post(
+    '/:eventId/trip/documents/remind',
+    ...member,
+    requireRole(['coordinator']),
+    tripDocumentsController.remind,
+  );
 
   return r;
 }
