@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Text } from '@/components/foundation/Text';
@@ -193,8 +193,11 @@ export function PostCreationScreen(): React.ReactElement {
           {typeOptions.map((opt) => {
             const selected = selectedType === opt.key;
             return (
-              <View
+              <Pressable
                 key={opt.key}
+                onPress={() => setSelectedType(opt.key)}
+                accessibilityRole="button"
+                accessibilityLabel={`${opt.title}, tap to select post type`}
                 style={{
                   borderRadius: spacing.space12,
                   borderWidth: 1,
@@ -210,7 +213,7 @@ export function PostCreationScreen(): React.ReactElement {
                 <Text variant="caption" style={{ color: color.textSecondary }}>
                   {opt.description}
                 </Text>
-              </View>
+              </Pressable>
             );
           })}
 
