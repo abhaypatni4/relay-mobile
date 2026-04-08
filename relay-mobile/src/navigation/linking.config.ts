@@ -6,11 +6,10 @@ import type { RootStackParamList } from '@/types/navigation';
  * Deep link map — docs/ux/information-architecture.md (Deep Link Map).
  * Nested structure matches MainApp → MainTabs → tab stacks.
  *
- * Notification payload alignment (IA vs API):
+ * Notification payload alignment (docs/ux/information-architecture.md):
  * - Trip published / critical change / postponed / document reminder: relay://trips/:tripId (and optional ?section=…)
- * - TRIP_CANCELLED push uses relay://trips/:tripId (TripDetail cancelled state); IA table lists events/:eventId as alternate.
+ * - TRIP_CANCELLED / selection notifications: relay://events/:eventId → EventDetailScreen
  * - Availability: events/:eventId/availability
- * - SELECTION_SELECTED / SELECTION_NOT_SELECTED: events/:eventId → EventDetailScreen
  * - Posts / nudge: posts/:postId
  * - Transfer: transfers/:transferId (TeamTab)
  * - Emergency: profile/emergency
