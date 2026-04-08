@@ -1,8 +1,9 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useQuery } from '@tanstack/react-query';
-import React, { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
+import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Alert, FlatList, Pressable, View, type LayoutChangeEvent } from 'react-native';
 import { AcknowledgmentButton } from '@/components/role-specific/AcknowledgmentButton';
 import { Text } from '@/components/foundation/Text';
@@ -10,6 +11,7 @@ import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { SquadMemberRow } from '@/components/data-display/SquadMemberRow';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
+import { ConfirmationSheet } from '@/components/overlay/ConfirmationSheet';
 import { api } from '@/services/api';
 import { useTripEventId } from '@/hooks/useTripEventId';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
@@ -89,14 +91,17 @@ export function TripDetailScreen(): React.ReactElement {
   const teamId = useTeamStore((s) => s.activeTeamId);
   const role = useTeamStore((s) => s.role);
   const isOffline = useUiStore((s) => s.isOffline);
+  const addToast = useUiStore((s) => s.addToast);
   const { teamMemberId } = useCurrentMember();
+  const queryClient = useQueryClient();
 
   const listRef = useRef<FlatList>(null);
   const squadSectionY = useRef(0);
+  const [cancelSheetOpen, setCancelSheetOpen] = useState(false);
 
   const { eventId, isResolving } = useTripEventId(teamId, tripId, paramEventId);
 
-  const { data: eventRow, isLoading: eventLoading } = useQuery({
+  const eventQuery = useQuery({
     queryKey: ['eventDetail', teamId, eventId],
     queryFn: async () => {
       const { data } = await api.get<ApiEventListItem>(`/teams/${teamId}/events/${eventId}`);
@@ -105,7 +110,7 @@ export function TripDetailScreen(): React.ReactElement {
     enabled: Boolean(teamId && eventId),
   });
 
-  const { data: trip, isLoading: tripLoading } = useQuery({
+  const tripQuery = useQuery({
     queryKey: ['tripWorkspace', eventId],
     queryFn: async () => {
       const { data } = await api.get<TripWorkspaceApi>(`/events/${eventId}/trip`);
@@ -114,7 +119,7 @@ export function TripDetailScreen(): React.ReactElement {
     enabled: Boolean(eventId),
   });
 
-  const { data: squad = [], isLoading: squadLoading } = useQuery({
+  const squadQuery = useQuery({
     queryKey: ['tripSquad', eventId],
     queryFn: async () => {
       const { data } = await api.get<{ assignments: SquadAssignmentApi[] }>(`/events/${eventId}/trip/squad`);
@@ -123,9 +128,15 @@ export function TripDetailScreen(): React.ReactElement {
     enabled: Boolean(eventId),
   });
 
+  const eventRow = eventQuery.data;
+  const trip = tripQuery.data;
+  const squad = squadQuery.data ?? [];
+
   const isCoordinator = role === 'coordinator';
   const isPlayer = role === 'player';
   const staffVariant = role === 'coordinator' || role === 'coach' || role === 'staff';
+
+  const isCancelled = eventRow?.status === 'cancelled';
 
   const myAssignment = useMemo(
     () => squad.find((a) => a.teamMemberId === teamMemberId),
@@ -141,6 +152,32 @@ export function TripDetailScreen(): React.ReactElement {
     return { done, total: pool.length };
   }, [travelingSquad, trip?.itineraryVersion]);
 
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      await api.post(`/events/${eventId}/cancel`);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['teamEvents'] });
+      if (teamId && eventId) {
+        void queryClient.invalidateQueries({ queryKey: ['eventDetail', teamId, eventId] });
+      }
+      void queryClient.invalidateQueries({ queryKey: ['tripWorkspace', eventId] });
+      void queryClient.invalidateQueries({ queryKey: ['tripSquad', eventId] });
+      setCancelSheetOpen(false);
+      navigation.navigate('EventsList');
+    },
+    onError: (e: unknown) => {
+      if (axios.isAxiosError(e) && e.response?.status === 409) {
+        addToast('error', 'This trip is already cancelled.');
+        void queryClient.invalidateQueries({ queryKey: ['teamEvents'] });
+        setCancelSheetOpen(false);
+        navigation.navigate('EventsList');
+        return;
+      }
+      addToast('error', 'Could not cancel trip.');
+    },
+  });
+
   const scrollToItinerary = useCallback(() => {
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
   }, []);
@@ -154,37 +191,43 @@ export function TripDetailScreen(): React.ReactElement {
     squadSectionY.current = e.nativeEvent.layout.y;
   }, []);
 
+  const openCoordinatorMenu = useCallback(() => {
+    if (isOffline) {
+      Alert.alert('Offline', 'Available when connected');
+      return;
+    }
+    if (isCancelled) {
+      return;
+    }
+    Alert.alert('Trip', undefined, [
+      {
+        text: 'Edit itinerary',
+        onPress: () => {
+          if (eventId) {
+            navigation.navigate('EditItinerary', { tripId, eventId });
+          }
+        },
+      },
+      {
+        text: 'Cancel trip',
+        style: 'destructive',
+        onPress: () => {
+          setTimeout(() => setCancelSheetOpen(true), 350);
+        },
+      },
+      { text: 'Close', style: 'cancel' },
+    ]);
+  }, [eventId, isCancelled, isOffline, navigation, tripId]);
+
   useLayoutEffect(() => {
-    if (!isCoordinator) {
+    if (!isCoordinator || isCancelled) {
+      navigation.setOptions({ headerRight: undefined });
       return;
     }
     navigation.setOptions({
       headerRight: () => (
         <Pressable
-          onPress={() => {
-            if (isOffline) {
-              Alert.alert('Offline', 'Connect to edit or cancel trips.');
-              return;
-            }
-            Alert.alert('Trip', undefined, [
-              {
-                text: 'Edit itinerary',
-                onPress: () => {
-                  if (eventId) {
-                    navigation.navigate('EditItinerary', { tripId, eventId });
-                  }
-                },
-              },
-              {
-                text: 'Cancel trip',
-                style: 'destructive',
-                onPress: () => {
-                  Alert.alert('Cancel trip', 'Trip cancellation will be available in a later update.');
-                },
-              },
-              { text: 'Close', style: 'cancel' },
-            ]);
-          }}
+          onPress={openCoordinatorMenu}
           style={{ marginRight: spacing.space16, padding: spacing.space8 }}
           accessibilityRole="button"
           accessibilityLabel="Trip actions"
@@ -195,10 +238,18 @@ export function TripDetailScreen(): React.ReactElement {
         </Pressable>
       ),
     });
-  }, [eventId, isCoordinator, navigation, tripId, isOffline]);
+  }, [isCoordinator, isCancelled, navigation, openCoordinatorMenu]);
+
+  const eventLoading = eventQuery.isLoading;
+  const tripLoading = tripQuery.isLoading;
+  const squadLoading = squadQuery.isLoading;
 
   const loading =
-    isResolving || !eventId || eventLoading || tripLoading || (staffVariant && squadLoading && !isOffline);
+    isResolving ||
+    !eventId ||
+    eventLoading ||
+    tripLoading ||
+    (staffVariant && squadLoading && !isOffline);
 
   const renderOptional = useCallback(
     (label: string, value: string | null) => {
@@ -256,7 +307,13 @@ export function TripDetailScreen(): React.ReactElement {
           </View>
         </View>
 
-        <Pressable onPress={scrollToItinerary} accessibilityRole="button">
+        {isCancelled ? (
+          <Text variant="body" colorToken={color.textSecondary} style={{ marginBottom: spacing.space24 }}>
+            This trip has been cancelled
+          </Text>
+        ) : null}
+
+        <Pressable onPress={scrollToItinerary} accessibilityRole="button" disabled={isCancelled}>
           <SectionHeader title="Itinerary" />
         </Pressable>
 
@@ -286,7 +343,7 @@ export function TripDetailScreen(): React.ReactElement {
         {renderOptional('Return departure point', trip.returnDeparturePoint)}
         {renderOptional('Additional notes', trip.additionalNotes)}
 
-        {!isPlayer && trip.isPublished ? (
+        {!isPlayer && !isCancelled && trip.isPublished ? (
           <Text variant="caption" colorToken={color.textSecondary} style={{ marginBottom: spacing.space8 }}>
             {ackSummary.total === 0
               ? 'No active traveling members to acknowledge yet'
@@ -294,7 +351,7 @@ export function TripDetailScreen(): React.ReactElement {
           </Text>
         ) : null}
 
-        {isPlayer ? (
+        {isPlayer && !isCancelled ? (
           <AcknowledgmentButton
             eventId={eventId}
             tripWorkspace={trip}
@@ -314,6 +371,7 @@ export function TripDetailScreen(): React.ReactElement {
     ackSummary.total,
     eventId,
     eventRow,
+    isCancelled,
     isPlayer,
     myAssignment,
     onSquadSectionLayout,
@@ -365,6 +423,23 @@ export function TripDetailScreen(): React.ReactElement {
           contentContainerStyle={{ paddingBottom: spacing.space32 }}
         />
       </View>
+
+      <ConfirmationSheet
+        visible={cancelSheetOpen}
+        title="Cancel this trip"
+        body="All assigned members will be notified. This cannot be undone."
+        confirmLabel="Yes, cancel trip"
+        cancelLabel="Go back"
+        isDestructive
+        onCancel={() => setCancelSheetOpen(false)}
+        onConfirm={() => {
+          if (!eventId || isOffline) {
+            addToast('error', 'Available when connected');
+            return Promise.resolve();
+          }
+          return cancelMutation.mutateAsync();
+        }}
+      />
     </ScreenContainer>
   );
 }
