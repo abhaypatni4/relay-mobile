@@ -28,6 +28,7 @@ model User {
   teamMemberships         TeamMember[]
   emergencyInfoAccessLogs EmergencyInfoAccessLog[] @relation("AccessedFor")
   refreshTokens           RefreshToken[]
+  notificationLogs        NotificationLog[]
 }
 
 model RefreshToken {
@@ -271,6 +272,16 @@ model EmergencyInfoAccessLog {
   accessedBy      TeamMember    @relation("AccessedBy", fields: [accessedById], references: [id])
   accessedFor     User          @relation("AccessedFor", fields: [accessedForId], references: [id])
   tripWorkspace   TripWorkspace @relation(fields: [tripWorkspaceId], references: [id])
+}
+
+model NotificationLog {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  sentAt    DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sentAt])
 }
 
 enum Role {
