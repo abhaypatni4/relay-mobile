@@ -29,7 +29,7 @@ const config: ExpoConfig = {
   web: {
     favicon: './assets/favicon.png',
   },
-  plugins: ['expo-secure-store'],
+  plugins: ['expo-secure-store', '@react-native-community/datetimepicker'],
   extra: {
     eas: {
       projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? '00000000-0000-0000-0000-000000000000',
