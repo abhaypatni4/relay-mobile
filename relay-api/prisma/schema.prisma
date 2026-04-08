@@ -21,6 +21,7 @@ model User {
   emergencyAllergyAlert   String?
   emergencyStaffNote      String?
   emergencyInfoUpdatedAt  DateTime?
+  notificationPreferences Json?
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
   teamMemberships         TeamMember[]
@@ -128,7 +129,18 @@ model TripWorkspace {
   event                    Event     @relation(fields: [eventId], references: [id])
   squadAssignments         TripSquadAssignment[]
   documentChecklist        DocumentChecklist?
+  preDepartureCustomItems  PreDepartureCustomItem[]
   emergencyInfoAccessLogs  EmergencyInfoAccessLog[]
+}
+
+model PreDepartureCustomItem {
+  id              String        @id @default(cuid())
+  tripWorkspaceId String
+  label           String
+  isComplete      Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  tripWorkspace   TripWorkspace @relation(fields: [tripWorkspaceId], references: [id])
 }
 
 model TripSquadAssignment {
