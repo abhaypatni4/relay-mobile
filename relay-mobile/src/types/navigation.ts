@@ -2,6 +2,8 @@
  * Typed route params — screens from docs/ux/information-architecture.md + auth/onboarding flows.
  */
 
+import type { NavigatorScreenParams } from '@react-navigation/native';
+
 export type AuthStackParamList = {
   Splash: undefined;
   Login: undefined;
@@ -17,7 +19,7 @@ export type HomeStackParamList = {
 export type EventsStackParamList = {
   EventsList: undefined;
   EventDetail: { eventId: string };
-  TripDetail: { tripId: string; section?: 'itinerary' | 'documents' };
+  TripDetail: { tripId: string; eventId?: string; section?: 'itinerary' | 'documents' };
   CreateEvent: undefined;
   EditItinerary: { tripId: string; eventId: string };
   SquadSelection: { tripId: string; eventId: string };
@@ -44,7 +46,7 @@ export type TeamStackParamList = {
 
 export type MainTabParamList = {
   HomeTab: undefined;
-  EventsTab: undefined;
+  EventsTab: NavigatorScreenParams<EventsStackParamList> | undefined;
   FeedTab: undefined;
   TeamTab: undefined;
 };

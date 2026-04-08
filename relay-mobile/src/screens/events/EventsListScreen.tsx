@@ -97,7 +97,7 @@ export function EventsListScreen(): React.ReactElement {
           );
           const tw = data.tripWorkspace;
           if (tw?.id) {
-            navigation.navigate('TripDetail', { tripId: tw.id });
+            navigation.navigate('TripDetail', { tripId: tw.id, eventId: data.id });
           }
         } catch {
           /* empty */
