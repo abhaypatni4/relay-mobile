@@ -3,7 +3,7 @@ import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Alert, FlatList, Pressable, View, type LayoutChangeEvent } from 'react-native';
 import { AcknowledgmentButton } from '@/components/role-specific/AcknowledgmentButton';
 import { Text } from '@/components/foundation/Text';
@@ -98,8 +98,9 @@ export function TripDetailScreen(): React.ReactElement {
   const listRef = useRef<FlatList>(null);
   const squadSectionY = useRef(0);
   const [cancelSheetOpen, setCancelSheetOpen] = useState(false);
+  const handledUnavailable = useRef(false);
 
-  const { eventId, isResolving } = useTripEventId(teamId, tripId, paramEventId);
+  const { eventId, isResolving, resolveError } = useTripEventId(teamId, tripId, paramEventId);
 
   const eventQuery = useQuery({
     queryKey: ['eventDetail', teamId, eventId],
@@ -137,6 +138,39 @@ export function TripDetailScreen(): React.ReactElement {
   const staffVariant = role === 'coordinator' || role === 'coach' || role === 'staff';
 
   const isCancelled = eventRow?.status === 'cancelled';
+
+  useEffect(() => {
+    if (handledUnavailable.current) {
+      return;
+    }
+    const err404 = (e: unknown) => axios.isAxiosError(e) && e.response?.status === 404;
+    if (eventQuery.isError && err404(eventQuery.error)) {
+      handledUnavailable.current = true;
+      addToast('error', 'This trip is no longer available.');
+      navigation.navigate('EventsList');
+      return;
+    }
+    if (tripQuery.isError && err404(tripQuery.error)) {
+      handledUnavailable.current = true;
+      addToast('error', 'This trip is no longer available.');
+      navigation.navigate('EventsList');
+      return;
+    }
+    if (trip && trip.id !== tripId) {
+      handledUnavailable.current = true;
+      addToast('error', 'This trip is no longer available.');
+      navigation.navigate('EventsList');
+    }
+  }, [
+    addToast,
+    eventQuery.error,
+    eventQuery.isError,
+    navigation,
+    trip,
+    tripId,
+    tripQuery.error,
+    tripQuery.isError,
+  ]);
 
   const myAssignment = useMemo(
     () => squad.find((a) => a.teamMemberId === teamMemberId),
@@ -381,6 +415,14 @@ export function TripDetailScreen(): React.ReactElement {
     travelingSquad.length,
     trip,
   ]);
+
+  if (resolveError && !eventId) {
+    return (
+      <ScreenContainer scrollable>
+        <Text variant="body">Trip could not be loaded.</Text>
+      </ScreenContainer>
+    );
+  }
 
   if (loading) {
     return (

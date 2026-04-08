@@ -12,11 +12,9 @@ function makeScreen(label: string): React.FC {
 }
 
 export const CreateFirstEventScreen = makeScreen('CreateFirstEventScreen');
-export const EventDetailScreen = makeScreen('EventDetailScreen');
 export const DocumentChecklistBuilderScreen = makeScreen('DocumentChecklistBuilderScreen');
 export const AvailabilitySubmissionScreen = makeScreen('AvailabilitySubmissionScreen');
 export const FeedScreen = makeScreen('FeedScreen');
-export const PostDetailScreen = makeScreen('PostDetailScreen');
 export const PostCreationScreen = makeScreen('PostCreationScreen');
 export const MemberDetailScreen = makeScreen('MemberDetailScreen');
 export const EditProfileScreen = makeScreen('EditProfileScreen');

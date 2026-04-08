@@ -9,20 +9,20 @@ import {
   CoordinatorHandoffScreen,
   DocumentChecklistBuilderScreen,
   EditProfileScreen,
-  EventDetailScreen,
   FeedScreen,
   MemberDetailScreen,
   NotificationPreferencesScreen,
   PostCreationScreen,
-  PostDetailScreen,
   TeamSettingsScreen,
 } from '@/screens/labels';
 import { CreateEventScreen } from '@/screens/events/CreateEventScreen';
 import { EditItineraryScreen } from '@/screens/events/EditItineraryScreen';
+import { EventDetailScreen } from '@/screens/events/EventDetailScreen';
 import { EventsListScreen } from '@/screens/events/EventsListScreen';
 import { SquadSelectionScreen } from '@/screens/events/SquadSelectionScreen';
 import { TripDetailScreen } from '@/screens/events/TripDetailScreen';
 import { TripReviewScreen } from '@/screens/events/TripReviewScreen';
+import { PostDetailScreen } from '@/screens/feed/PostDetailScreen';
 import { HomeScreen } from '@/screens/home/HomeScreen';
 import { TeamRosterScreen } from '@/screens/team/TeamRosterScreen';
 import { TextVariantDemoScreen } from '@/screens/TextVariantDemoScreen';

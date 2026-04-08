@@ -34,5 +34,7 @@ export function useTripEventId(teamId: string | null, tripId: string, initialEve
   return {
     eventId: initialEventId ?? q.data ?? null,
     isResolving: !initialEventId && q.isLoading,
+    /** True when deep link could not resolve eventId (e.g. network failure with no cache). */
+    resolveError: Boolean(!initialEventId && q.isError),
   };
 }

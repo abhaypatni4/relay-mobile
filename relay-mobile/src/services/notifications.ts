@@ -41,9 +41,16 @@ export async function ensureAndroidNotificationChannel(): Promise<void> {
 
 function navigateFromDeepLink(url: string): void {
   const trimmed = url.replace(/^relay:\/\//i, '').replace(/^relay:/i, '');
-  const state = getStateFromPath(trimmed, linking.config);
+  const pathOnly = trimmed.split('?')[0] ?? trimmed;
+  const state = getStateFromPath(pathOnly, linking.config);
   if (state && navigationRef.isReady()) {
     navigationRef.dispatch(CommonActions.reset(state as never));
+    return;
+  }
+  useUiStore.getState().addToast('error', 'Could not open link.');
+  const fallback = getStateFromPath('events', linking.config);
+  if (fallback && navigationRef.isReady()) {
+    navigationRef.dispatch(CommonActions.reset(fallback as never));
   }
 }
 
