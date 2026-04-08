@@ -16,6 +16,8 @@ export function registerRoutes(app: Express, env: Env): void {
   app.use('/teams', createTeamsRouter(env));
   app.use('/events', createEventTripsRouter(env));
   app.use('/users', createUsersRouter(env));
-  app.use(createDemoRouter(env));
+  if (process.env.NODE_ENV !== 'production') {
+    app.use(createDemoRouter(env));
+  }
   app.use(createProtectedDemoRouter(env));
 }
