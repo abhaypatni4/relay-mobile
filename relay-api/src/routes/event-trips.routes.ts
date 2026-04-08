@@ -10,6 +10,7 @@ export function createEventTripsRouter(env: Env): Router {
   const auth = authenticateMiddleware(env);
   const member = [auth, requireEventTeamMember];
 
+  r.post('/:eventId/cancel', ...member, requireRole(['coordinator']), tripsController.cancelTrip);
   r.get('/:eventId/trip', ...member, tripsController.getTrip);
   r.patch('/:eventId/trip/itinerary', ...member, requireRole(['coordinator']), tripsController.patchItinerary);
   r.post(

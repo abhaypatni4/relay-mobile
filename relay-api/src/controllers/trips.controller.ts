@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { TravelingStatus } from '@prisma/client';
+import { cancelTripEvent } from '../services/event.service';
 import { serializeTripWorkspace } from '../serializers/event.serializer';
 import {
   acknowledgeTripItinerary,
@@ -45,6 +46,29 @@ const acknowledgeBody = z
   .strict();
 
 export const tripsController = {
+  cancelTrip: async (req: Request, res: Response): Promise<void> => {
+    const eventId = req.params.eventId;
+    const eid = Array.isArray(eventId) ? eventId[0] : eventId;
+    if (!eid || !req.eventRow) {
+      res.status(400).json({ error: 'eventId required' });
+      return;
+    }
+    const result = await cancelTripEvent(eid);
+    if (result === 'ok') {
+      res.status(200).json({ cancelled: true });
+      return;
+    }
+    if (result === 'ALREADY_CANCELLED') {
+      res.status(409).json({ error: 'Event is already cancelled' });
+      return;
+    }
+    if (result === 'NOT_TRIP') {
+      res.status(400).json({ error: 'Only trip events can be cancelled with this action' });
+      return;
+    }
+    res.status(404).json({ error: 'Not found' });
+  },
+
   getTrip: async (req: Request, res: Response): Promise<void> => {
     const eventId = req.params.eventId;
     const eid = Array.isArray(eventId) ? eventId[0] : eventId;

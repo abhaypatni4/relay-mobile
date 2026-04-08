@@ -1,5 +1,6 @@
 import type { EventType } from '@prisma/client';
 import { prisma } from '../db/prisma';
+import { sendToMultiple } from './notification.service';
 
 export interface CreateEventInput {
   type: EventType;
@@ -71,6 +72,59 @@ export async function getEventByIdForTeam(teamId: string, eventId: string) {
     where: { id: eventId, teamId },
     include: { tripWorkspace: true },
   });
+}
+
+export type CancelTripResult = 'ok' | 'EVENT_NOT_FOUND' | 'NOT_TRIP' | 'ALREADY_CANCELLED';
+
+/**
+ * Coordinator-only trip cancellation: irreversible; notifies all squad assignments (any traveling status).
+ */
+export async function cancelTripEvent(eventId: string): Promise<CancelTripResult> {
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: { tripWorkspace: true },
+  });
+  if (!event) {
+    return 'EVENT_NOT_FOUND';
+  }
+  if (event.type !== 'trip') {
+    return 'NOT_TRIP';
+  }
+  if (event.status === 'cancelled') {
+    return 'ALREADY_CANCELLED';
+  }
+
+  await prisma.event.update({
+    where: { id: eventId },
+    data: { status: 'cancelled', cancelledAt: new Date() },
+  });
+
+  const tw = event.tripWorkspace;
+  if (tw) {
+    const rows = await prisma.tripSquadAssignment.findMany({
+      where: { tripWorkspaceId: tw.id },
+      include: {
+        teamMember: {
+          include: { user: { select: { pushToken: true } } },
+        },
+      },
+    });
+    const tokens = rows
+      .map((r) => r.teamMember.user.pushToken)
+      .filter((t): t is string => Boolean(t && t.length > 0));
+    if (tokens.length > 0) {
+      await sendToMultiple(tokens, {
+        title: event.name,
+        body: `${event.name} has been cancelled`,
+        data: {
+          deepLink: `relay://trips/${tw.id}`,
+          type: 'TRIP_CANCELLED',
+        },
+      });
+    }
+  }
+
+  return 'ok';
 }
 
 export async function patchTeamEvent(
