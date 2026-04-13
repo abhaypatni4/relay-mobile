@@ -113,6 +113,22 @@ export async function clearAuthSession(): Promise<void> {
   await SecureStore.deleteItemAsync(USER_ID_KEY);
 }
 
+/** Revokes refresh token on the server (best effort), then clears local session and returns to login. */
+export async function performLogout(): Promise<void> {
+  const raw = await SecureStore.getItemAsync(REFRESH_KEY);
+  if (raw) {
+    try {
+      await api.post('/auth/logout', { refreshToken: raw });
+    } catch {
+      /* still sign out locally */
+    }
+  }
+  useAuthStore.getState().clearAuth();
+  useTeamStore.getState().clearTeamContext();
+  await clearAuthSession();
+  navigateToLogin();
+}
+
 /** Attempt refresh using stored credentials; sets auth store on success. */
 export async function restoreSessionFromRefresh(): Promise<boolean> {
   try {
