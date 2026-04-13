@@ -378,6 +378,27 @@ export function TripDetailScreen(): React.ReactElement {
     },
   });
 
+  const publishMutation = useMutation({
+    mutationFn: async () => {
+      if (!eventId) {
+        throw new Error('eventId required');
+      }
+      await api.post(`/events/${eventId}/trip/publish`);
+    },
+    onSuccess: async () => {
+      addToast('success', 'Trip published');
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['teamEvents'] }),
+        queryClient.invalidateQueries({ queryKey: ['eventDetail', teamId, eventId] }),
+        queryClient.invalidateQueries({ queryKey: ['tripWorkspace', eventId] }),
+        queryClient.invalidateQueries({ queryKey: ['tripSquad', eventId] }),
+      ]);
+    },
+    onError: () => {
+      addToast('error', 'Could not publish trip.');
+    },
+  });
+
   const scrollToItinerary = useCallback(() => {
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
   }, []);
@@ -492,6 +513,31 @@ export function TripDetailScreen(): React.ReactElement {
     return (
       <View>
         <View style={{ marginBottom: spacing.space24 }}>
+          {isCoordinator && eventRow.status === 'draft' ? (
+            <View
+              style={{
+                backgroundColor: color.actionPrimary,
+                borderRadius: radius.md,
+                padding: spacing.space16,
+                marginBottom: spacing.space16,
+              }}
+            >
+              <Text variant="label" colorToken={color.actionOnPrimary} style={{ marginBottom: spacing.space8 }}>
+                Ready to publish?
+              </Text>
+              <LoadingButton
+                label="Publish now →"
+                isLoading={publishMutation.status === 'pending'}
+                onPress={() => {
+                  if (isOffline) {
+                    addToast('error', 'Available when connected');
+                    return;
+                  }
+                  void publishMutation.mutateAsync();
+                }}
+              />
+            </View>
+          ) : null}
           <Text variant="display" style={{ marginBottom: spacing.space8 }}>
             {eventRow.name}
           </Text>
