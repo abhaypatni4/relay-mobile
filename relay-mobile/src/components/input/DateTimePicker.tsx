@@ -65,6 +65,17 @@ export function DateTimePicker({
     [fallback, valueIso],
   );
 
+  /** Android: `datetime` breaks unmount cleanup (`pickers[mode].dismiss` — no `datetime` key). */
+  const nativePickerMode = useMemo(() => {
+    if (Platform.OS !== 'android') {
+      return pickerMode;
+    }
+    if (pickerMode === 'datetime') {
+      return 'date';
+    }
+    return pickerMode;
+  }, [pickerMode]);
+
   const displayLabel = useMemo(() => {
     if (!valueIso.trim()) {
       return optional ? 'Tap to choose (optional)' : 'Tap to choose';
@@ -129,7 +140,7 @@ export function DateTimePicker({
       {open ? (
         <DateTimePickerNative
           value={valueDate}
-          mode={pickerMode}
+          mode={nativePickerMode}
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={onPick}
         />

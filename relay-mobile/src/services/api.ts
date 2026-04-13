@@ -19,6 +19,16 @@ export const api = axios.create({
   baseURL: apiBaseUrl,
   timeout: 15000,
 });
+console.log('[API] baseURL', api.defaults.baseURL);
+
+export async function testConnection(): Promise<void> {
+  try {
+    const res = await api.get('/health');
+    console.log('[API] /health ok', res.status, api.defaults.baseURL);
+  } catch (e) {
+    console.log('[API] /health failed', api.defaults.baseURL, e);
+  }
+}
 
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken;

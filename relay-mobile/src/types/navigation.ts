@@ -4,8 +4,8 @@
 
 import type { NavigatorScreenParams } from '@react-navigation/native';
 
-export type AuthStackParamList = {
-  Splash: undefined;
+/** Sign-in, signup, and invite flows (nested under root `Auth`). */
+export type AuthNavigatorParamList = {
   Login: undefined;
   AccountCreation: { invitationToken?: string } | undefined;
   AcceptInvite: { token?: string };
@@ -60,11 +60,9 @@ export type AppStackParamList = {
   MainTabs: undefined;
 };
 
-/** Single root stack: auth/onboarding screens + MainApp (nested app shell). */
+/** Root stack: splash → Auth group (Login first) or MainApp. */
 export type RootStackParamList = {
   Splash: undefined;
-  Login: undefined;
-  AccountCreation: { invitationToken?: string } | undefined;
-  AcceptInvite: { token?: string };
+  Auth: NavigatorScreenParams<AuthNavigatorParamList> | undefined;
   MainApp: undefined;
 };

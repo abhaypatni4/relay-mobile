@@ -1,5 +1,4 @@
 import type { ExpoConfig } from 'expo/config';
-
 const config: ExpoConfig = {
   name: 'Relay',
   slug: 'relay-mobile',
@@ -9,8 +8,14 @@ const config: ExpoConfig = {
   userInterfaceStyle: 'light',
   scheme: 'relay',
   newArchEnabled: true,
+  updates: {
+    url: 'https://u.expo.dev/07182d9d-8b69-4704-92e5-9d46ba89c3ed',
+  },
+  runtimeVersion: {
+    policy: 'appVersion',
+  },
   splash: {
-    image: './assets/splash.png',         // ← changed from splash-icon.png
+    image: './assets/splash.png',
     resizeMode: 'contain',
     backgroundColor: '#ffffff',
   },
@@ -31,7 +36,7 @@ const config: ExpoConfig = {
     versionCode: 1,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#1A7A76',         // ← changed from #ffffff to Relay teal
+      backgroundColor: '#1A7A76',
     },
     edgeToEdgeEnabled: true,
     intentFilters: [
@@ -48,9 +53,8 @@ const config: ExpoConfig = {
   plugins: ['expo-secure-store', '@react-native-community/datetimepicker'],
   extra: {
     eas: {
-      projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? '00000000-0000-0000-0000-000000000000',
+      projectId: '07182d9d-8b69-4704-92e5-9d46ba89c3ed',
     },
   },
 };
-
 export default config;

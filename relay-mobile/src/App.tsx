@@ -18,6 +18,7 @@ import {
   ensureAndroidNotificationChannel,
   syncPushTokenIfPermissionGranted,
 } from '@/services/notifications';
+import { testConnection } from '@/services/api';
 import { queryPersister } from '@/services/offlineCache';
 import { analytics, pseudonymizedUserId } from '@/services/analytics';
 import { createAppQueryClient } from '@/services/queryClient';
@@ -33,6 +34,10 @@ export default function App(): React.ReactElement {
   const [queryClient] = useState(() => createAppQueryClient());
   const wasOffline = useRef(false);
   const offlineStartedAt = useRef<number | null>(null);
+
+  useEffect(() => {
+    void testConnection();
+  }, []);
 
   useEffect(() => {
     analytics.configure({

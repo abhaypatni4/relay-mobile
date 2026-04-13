@@ -9,13 +9,14 @@ import { Text } from '@/components/foundation/Text';
 import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { TextInput } from '@/components/forms/TextInput';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
+import { resetToMainApp } from '@/navigation/navigationRef';
 import { api } from '@/services/api';
 import { analytics } from '@/services/analytics';
 import { applyMembershipsToTeamStore, fetchMe } from '@/services/session';
 import { useAuthStore } from '@/store/authStore';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
-import type { RootStackParamList } from '@/types/navigation';
+import type { AuthNavigatorParamList } from '@/types/navigation';
 
 export function AcceptInviteScreen(): React.ReactElement {
   useFocusEffect(
@@ -24,8 +25,8 @@ export function AcceptInviteScreen(): React.ReactElement {
     }, []),
   );
 
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'AcceptInvite'>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'AcceptInvite'>>();
+  const navigation = useNavigation<NativeStackNavigationProp<AuthNavigatorParamList, 'AcceptInvite'>>();
+  const route = useRoute<RouteProp<AuthNavigatorParamList, 'AcceptInvite'>>();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [manualToken, setManualToken] = useState('');
   const [joinError, setJoinError] = useState('');
@@ -80,7 +81,7 @@ export function AcceptInviteScreen(): React.ReactElement {
         const me = await fetchMe();
         applyMembershipsToTeamStore(me.memberships);
         analytics.track('invitation_accepted', {});
-        navigation.reset({ index: 0, routes: [{ name: 'MainApp' }] });
+        resetToMainApp();
         return;
       }
       navigation.navigate('AccountCreation', { invitationToken: effectiveToken });

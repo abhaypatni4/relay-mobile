@@ -8,14 +8,16 @@ import { Text } from '@/components/foundation/Text';
 import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { TextInput } from '@/components/forms/TextInput';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
+import { resetToMainApp } from '@/navigation/navigationRef';
 import { api, saveAuthSession } from '@/services/api';
 import { analytics, pseudonymizedUserId } from '@/services/analytics';
 import { applyMembershipsToTeamStore, fetchMe } from '@/services/session';
 import { useAuthStore } from '@/store/authStore';
+import { useUiStore } from '@/store/uiStore';
 import { color } from '@/tokens/colors';
 import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
-import type { RootStackParamList } from '@/types/navigation';
+import type { AuthNavigatorParamList } from '@/types/navigation';
 import type { Role } from '@/types/models';
 
 type InviteRoleChoice = 'player' | 'coach' | 'staff' | 'other';
@@ -34,10 +36,11 @@ export function AccountCreationScreen(): React.ReactElement {
     }, []),
   );
 
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'AccountCreation'>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'AccountCreation'>>();
+  const navigation = useNavigation<NativeStackNavigationProp<AuthNavigatorParamList, 'AccountCreation'>>();
+  const route = useRoute<RouteProp<AuthNavigatorParamList, 'AccountCreation'>>();
   const invitationToken = route.params?.invitationToken;
   const setAuth = useAuthStore((s) => s.setAuth);
+  const addToast = useUiStore((s) => s.addToast);
 
   const [name, setName] = useState('');
   const [identifier, setIdentifier] = useState('');
@@ -48,6 +51,7 @@ export function AccountCreationScreen(): React.ReactElement {
   const [loading, setLoading] = useState(false);
 
   const onSubmit = useCallback(async () => {
+    console.log('[AccountCreation] submit tapped', { name, identifier, passwordLen: password.length });
     setIdentifierError('');
     const trimmedName = name.trim();
     const trimmedId = identifier.trim();
@@ -99,8 +103,9 @@ export function AccountCreationScreen(): React.ReactElement {
         applyMembershipsToTeamStore(me.memberships);
       }
 
-      navigation.reset({ index: 0, routes: [{ name: 'MainApp' }] });
+      resetToMainApp();
     } catch (e: unknown) {
+      console.log('[AccountCreation] register failed', e);
       if (axios.isAxiosError(e) && e.response?.status === 409) {
         const msg =
           typeof e.response.data === 'object' &&
@@ -110,11 +115,13 @@ export function AccountCreationScreen(): React.ReactElement {
             ? (e.response.data as { error: string }).error
             : 'This email or phone is already registered.';
         setIdentifierError(msg);
+      } else {
+        addToast('error', 'Could not create account. Check your connection and try again.');
       }
     } finally {
       setLoading(false);
     }
-  }, [identifier, invitationToken, inviteRole, name, navigation, otherLabel, password, setAuth]);
+  }, [addToast, identifier, invitationToken, inviteRole, name, otherLabel, password, setAuth]);
 
   return (
     <ScreenContainer scrollable>

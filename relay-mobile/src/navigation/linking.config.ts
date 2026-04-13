@@ -16,9 +16,13 @@ import type { RootStackParamList } from '@/types/navigation';
  */
 export const linkingScreens = {
   Splash: '',
-  Login: 'login',
-  AccountCreation: 'signup',
-  AcceptInvite: 'invite/:token',
+  Auth: {
+    screens: {
+      Login: 'login',
+      AccountCreation: 'signup',
+      AcceptInvite: 'invite/:token',
+    },
+  },
   MainApp: {
     screens: {
       CreateTeam: 'onboarding/team',

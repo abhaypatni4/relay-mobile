@@ -7,13 +7,16 @@ import { Text } from '@/components/foundation/Text';
 import { LoadingButton } from '@/components/feedback/LoadingButton';
 import { TextInput } from '@/components/forms/TextInput';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
+import { resetToMainApp } from '@/navigation/navigationRef';
 import { api, saveAuthSession } from '@/services/api';
 import { bootstrapSessionAfterAuth } from '@/services/session';
 import { analytics } from '@/services/analytics';
+import { apiBaseUrl } from '@/services/env';
 import { useAuthStore } from '@/store/authStore';
+import { useUiStore } from '@/store/uiStore';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
-import type { RootStackParamList } from '@/types/navigation';
+import type { AuthNavigatorParamList } from '@/types/navigation';
 
 interface LoginResponse {
   user: { id: string; name: string; email: string | null; phone: string | null };
@@ -29,8 +32,9 @@ export function LoginScreen(): React.ReactElement {
     }, []),
   );
 
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Login'>>();
+  const navigation = useNavigation<NativeStackNavigationProp<AuthNavigatorParamList, 'Login'>>();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const addToast = useUiStore((s) => s.addToast);
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [identifierError, setIdentifierError] = useState('');
@@ -51,15 +55,17 @@ export function LoginScreen(): React.ReactElement {
       await saveAuthSession(data.refreshToken, data.user.id);
       setAuth(data.user.id, data.accessToken);
       await bootstrapSessionAfterAuth();
-      navigation.reset({ index: 0, routes: [{ name: 'MainApp' }] });
+      resetToMainApp();
     } catch (e: unknown) {
       if (axios.isAxiosError(e) && e.response?.status === 401) {
         setIdentifierError('That email or phone and password do not match. Try again.');
+      } else {
+        addToast('error', 'Login failed. Check your connection and try again.');
       }
     } finally {
       setLoading(false);
     }
-  }, [identifier, password, navigation, setAuth]);
+  }, [addToast, identifier, password, setAuth]);
 
   return (
     <ScreenContainer scrollable>
@@ -68,6 +74,9 @@ export function LoginScreen(): React.ReactElement {
       </Text>
       <Text variant="body" colorToken={color.textSecondary} style={{ marginBottom: spacing.space24 }}>
         Sign in with the email or phone you used to register.
+      </Text>
+      <Text variant="label" style={{ fontSize: 10, color: 'red', textAlign: 'center', marginBottom: spacing.space12 }}>
+        API: {apiBaseUrl}
       </Text>
       <TextInput
         label="Email or phone"
