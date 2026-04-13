@@ -5,8 +5,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
-import { Icon } from '@/components/foundation/Icon';
 import { Text } from '@/components/foundation/Text';
+import { CardContainer } from '@/components/layout/CardContainer';
 import { eventStartDate } from '@/components/data-display/EventCard';
 import { PlayerTripCard, type TripCardData } from '@/components/data-display/TripCard';
 import { api } from '@/services/api';
@@ -71,18 +71,15 @@ export function PlayerHome(): React.ReactElement {
 
   const upcomingTripIds = useMemo(() => upcomingTrips.map((e) => e.id), [upcomingTrips]);
 
-  const nextMatchOrTraining = useMemo(() => {
-    return [...events]
-      .filter((e) => (e.type === 'match' || e.type === 'training') && eventStartDate(e).getTime() >= now)
-      .sort((a, b) => eventStartDate(a).getTime() - eventStartDate(b).getTime())[0];
-  }, [events, now]);
+  const nextMatchTraining = events.find(
+    (e) => (e.type === 'match' || e.type === 'training') && e.status === 'active',
+  );
 
-  const selectionAvail = useAvailability(nextMatchOrTraining?.id ?? null);
+  const selectionAvail = useAvailability(nextMatchTraining?.id ?? null);
   const selectionRow = useMemo(
     () => selectionAvail.data?.submissions.find((s) => s.teamMemberId === teamMemberId),
     [selectionAvail.data?.submissions, teamMemberId],
   );
-  const selectionNotified = Boolean(selectionAvail.data?.window?.selectionNotificationsSentAt);
 
   const { data: travelingContext } = useQuery({
     queryKey: ['playerHomeTravelingTrip', teamId, teamMemberId, upcomingTripIds],
@@ -150,14 +147,31 @@ export function PlayerHome(): React.ReactElement {
   };
 
   const openSelectionEvent = () => {
-    if (!nextMatchOrTraining) {
+    if (!nextMatchTraining) {
       return;
     }
     navigation.navigate('EventsTab', {
       screen: 'EventDetail',
-      params: { eventId: nextMatchOrTraining.id },
+      params: { eventId: nextMatchTraining.id },
     });
   };
+
+  const availabilityStatusLine = useMemo(() => {
+    const st = selectionRow?.availabilityStatus;
+    if (st === 'available') {
+      return 'Available';
+    }
+    if (st === 'limited') {
+      return 'Limited';
+    }
+    if (st === 'unavailable') {
+      return 'Unavailable';
+    }
+    if (selectionAvail.data?.window) {
+      return 'Not submitted yet';
+    }
+    return null;
+  }, [selectionAvail.data?.window, selectionRow?.availabilityStatus]);
 
   if (isLoading) {
     return (
@@ -222,74 +236,42 @@ export function PlayerHome(): React.ReactElement {
         </View>
       ) : null}
 
-      {nextMatchOrTraining ? (
+      {nextMatchTraining ? (
         <View>
           <Text
             variant="caption"
             colorToken={color.textLabel}
             style={{ marginBottom: spacing.space8, letterSpacing: 1.2, textTransform: 'uppercase' }}
           >
-            Selection status
+            Upcoming match / training
           </Text>
-          <Pressable
-            onPress={selectionNotified ? openSelectionEvent : undefined}
-            disabled={!selectionNotified}
+          <CardContainer
+            pressable
+            onPress={openSelectionEvent}
             style={{
-              borderRadius: spacing.space12,
-              backgroundColor: color.surfaceElevated,
               borderWidth: 1,
               borderColor: color.borderSubtle,
               borderLeftWidth: spacing.space4,
-              borderLeftColor: !selectionNotified
-                ? color.actionPrimary
-                : selectionRow?.selectionOutcome === 'selected'
-                  ? color.stateSuccess
-                  : color.textDisabled,
-              paddingHorizontal: spacing.space20,
-              paddingVertical: spacing.space16,
-              shadowColor: color.shadow,
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.08,
-              shadowRadius: spacing.space8,
-              elevation: 2,
-              opacity: selectionNotified ? 1 : 0.96,
+              borderLeftColor: color.actionPrimary,
             }}
           >
-            {!selectionNotified ? (
-              <>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.space8 }}>
-                  <Icon name="calendar" size={spacing.space16} color={color.actionPrimary} />
-                </View>
-                <Text variant="body" style={{ fontWeight: '600', marginBottom: spacing.space4 }}>
-                  Awaiting selection
-                </Text>
-                <Text variant="caption" colorToken={color.textSecondary}>
-                  Your coach hasn&apos;t sent selection yet
-                </Text>
-              </>
-            ) : selectionRow?.selectionOutcome === 'selected' ? (
-              <>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.space8 }}>
-                  <Icon name="check" size={spacing.space24} color={color.stateSuccess} />
-                </View>
-                <Text variant="body" style={{ fontWeight: '700', marginBottom: spacing.space4 }}>
-                  You&apos;re in the squad
-                </Text>
-                <Text variant="caption" colorToken={color.textSecondary}>
-                  {nextMatchOrTraining.name}
-                </Text>
-              </>
-            ) : (
-              <>
-                <Text variant="body" style={{ fontWeight: '600', marginBottom: spacing.space4 }}>
-                  Not selected for this one
-                </Text>
-                <Text variant="caption" colorToken={color.textSecondary}>
-                  {nextMatchOrTraining.name}
-                </Text>
-              </>
-            )}
-          </Pressable>
+            <Text variant="title" style={{ fontWeight: '700', marginBottom: spacing.space8 }}>
+              {nextMatchTraining.name}
+            </Text>
+            <Text variant="body" colorToken={color.textSecondary} style={{ marginBottom: spacing.space8 }}>
+              {new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(
+                eventStartDate(nextMatchTraining),
+              )}
+            </Text>
+            {availabilityStatusLine ? (
+              <Text variant="body" colorToken={color.textSecondary} style={{ marginBottom: spacing.space8 }}>
+                {availabilityStatusLine}
+              </Text>
+            ) : null}
+            <Text variant="label" colorToken={color.actionPrimary}>
+              View event →
+            </Text>
+          </CardContainer>
         </View>
       ) : null}
     </View>
