@@ -11,9 +11,11 @@ import { eventStartDate } from '@/components/data-display/EventCard';
 import { PlayerTripCard, type TripCardData } from '@/components/data-display/TripCard';
 import { api } from '@/services/api';
 import { analytics } from '@/services/analytics';
+import { fetchMe } from '@/services/session';
 import { useAvailability } from '@/queries/useAvailability';
 import { useTeamEvents, type ApiEventListItem } from '@/hooks/useTeamEvents';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
+import { useAuthStore } from '@/store/authStore';
 import { useTeamStore } from '@/store/teamStore';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
@@ -41,10 +43,25 @@ export function PlayerHome(): React.ReactElement {
 
   const navigation = useNavigation<HomeNav>();
   const teamId = useTeamStore((s) => s.activeTeamId);
+  const userId = useAuthStore((s) => s.userId);
   const { teamMemberId } = useCurrentMember();
   const { data: events = [], isLoading } = useTeamEvents(teamId);
+  const { data: me } = useQuery({
+    queryKey: ['users', 'me'],
+    queryFn: fetchMe,
+    enabled: Boolean(userId),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const now = Date.now();
+  const firstName = useMemo(() => {
+    const n = me?.user.name?.trim();
+    if (!n) {
+      return 'there';
+    }
+    const [first] = n.split(/\s+/);
+    return first || 'there';
+  }, [me?.user.name]);
 
   const upcomingTrips = useMemo(() => {
     return [...events]
@@ -153,8 +170,57 @@ export function PlayerHome(): React.ReactElement {
   }
 
   return (
-    <View style={{ padding: spacing.space16 }}>
-      {tripCardData ? <PlayerTripCard trip={tripCardData} onPress={openTrip} /> : null}
+    <View style={{ flex: 1, backgroundColor: color.surfaceBase, padding: spacing.space16 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.space16 }}>
+        <Text variant="title">Hey, {firstName}</Text>
+        <View
+          style={{
+            width: spacing.space32,
+            height: spacing.space32,
+            borderRadius: spacing.space16,
+            borderWidth: 1,
+            borderColor: color.borderDefault,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: color.surfaceElevated,
+          }}
+        >
+          <Text variant="label" style={{ fontSize: spacing.space16 }}>
+            🔔
+          </Text>
+          <View
+            style={{
+              position: 'absolute',
+              top: -spacing.space4,
+              right: -spacing.space4,
+              minWidth: spacing.space16,
+              height: spacing.space16,
+              borderRadius: spacing.space8,
+              backgroundColor: color.stateWarning,
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingHorizontal: spacing.space4,
+            }}
+          >
+            <Text variant="caption" colorToken={color.actionOnPrimary}>
+              0
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {tripCardData ? (
+        <View style={{ marginBottom: spacing.space12 }}>
+          <Text
+            variant="caption"
+            colorToken={color.textLabel}
+            style={{ marginBottom: spacing.space8, letterSpacing: 1.2, textTransform: 'uppercase' }}
+          >
+            Your next trip
+          </Text>
+          <PlayerTripCard trip={tripCardData} onPress={openTrip} />
+        </View>
+      ) : null}
 
       {nextMatchOrTraining ? (
         <SelectionStatusCard
@@ -164,12 +230,6 @@ export function PlayerHome(): React.ReactElement {
           onPressToEvent={selectionNotified ? openSelectionEvent : undefined}
         />
       ) : null}
-
-      <View style={{ marginTop: spacing.space8 }}>
-        <Text variant="caption" colorToken={color.textSecondary}>
-          Unread feed: 0
-        </Text>
-      </View>
     </View>
   );
 }

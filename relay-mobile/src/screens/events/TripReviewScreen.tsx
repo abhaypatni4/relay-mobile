@@ -10,6 +10,7 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
 import { analytics } from '@/services/analytics';
 import { useTripDocuments } from '@/queries/useTripDocuments';
+import { useTeamStore } from '@/store/teamStore';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
 import type { EventsStackParamList } from '@/types/navigation';
@@ -48,7 +49,8 @@ export function TripReviewScreen(): React.ReactElement {
 
   const navigation = useNavigation<NativeStackNavigationProp<EventsStackParamList, 'TripReview'>>();
   const route = useRoute<RouteProp<EventsStackParamList, 'TripReview'>>();
-  const { eventId } = route.params;
+  const { eventId, tripId } = route.params;
+  const teamId = useTeamStore((s) => s.activeTeamId);
   const queryClient = useQueryClient();
 
   const { data: trip } = useQuery({
@@ -103,14 +105,24 @@ export function TripReviewScreen(): React.ReactElement {
         hasDocumentChecklist: documentItemCount > 0,
       });
       await queryClient.invalidateQueries({ queryKey: ['teamEvents'] });
+      if (teamId) {
+        await queryClient.invalidateQueries({ queryKey: ['teamEvents', teamId] });
+        await queryClient.invalidateQueries({ queryKey: ['events', teamId] });
+      }
+      await queryClient.invalidateQueries({ queryKey: ['events'] });
+      await queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+      await queryClient.invalidateQueries({ queryKey: ['eventDetail'] });
+      await queryClient.invalidateQueries({ queryKey: ['trip', tripId] });
       await queryClient.invalidateQueries({ queryKey: ['tripWorkspace', eventId] });
+      await queryClient.invalidateQueries({ queryKey: ['tripSquad', eventId] });
+      await queryClient.invalidateQueries({ queryKey: ['tripDocuments', eventId] });
       navigation.navigate('EventsList');
     } catch {
       setPublishError('Could not publish. Check departure details and try again.');
     } finally {
       setPublishing(false);
     }
-  }, [documentItemCount, eventId, navigation, queryClient, squadTravelingCount]);
+  }, [documentItemCount, eventId, navigation, queryClient, squadTravelingCount, teamId, tripId]);
 
   const onSaveDraft = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ['teamEvents'] });

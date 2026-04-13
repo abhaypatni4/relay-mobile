@@ -1,5 +1,6 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, SectionList } from 'react-native';
 import { Text } from '@/components/foundation/Text';
@@ -32,6 +33,7 @@ export function EventsListScreen(): React.ReactElement {
   );
 
   const navigation = useNavigation<Nav>();
+  const queryClient = useQueryClient();
   const teamId = useTeamStore((s) => s.activeTeamId);
   const role = useTeamStore((s) => s.role);
   const { data: teamEventsData, isLoading, refetch, isRefetching } = useTeamEvents(teamId);
@@ -40,8 +42,12 @@ export function EventsListScreen(): React.ReactElement {
 
   useFocusEffect(
     useCallback(() => {
+      if (teamId) {
+        void queryClient.invalidateQueries({ queryKey: ['events', teamId] });
+        void queryClient.invalidateQueries({ queryKey: ['teamEvents', teamId] });
+      }
       void refetch();
-    }, [refetch]),
+    }, [queryClient, refetch, teamId]),
   );
 
   useLayoutEffect(() => {
