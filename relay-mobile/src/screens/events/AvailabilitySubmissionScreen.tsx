@@ -1,7 +1,7 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -56,6 +56,7 @@ export function AvailabilitySubmissionScreen(): React.ReactElement {
   const route = useRoute<RouteProp<EventsStackParamList, 'AvailabilitySubmission'>>();
   const { eventId } = route.params;
   const teamId = useTeamStore((s) => s.activeTeamId);
+  const queryClient = useQueryClient();
   const isOffline = useUiStore((s) => s.isOffline);
   const insets = useSafeAreaInsets();
   const { teamMemberId } = useCurrentMember();
@@ -110,6 +111,7 @@ export function AvailabilitySubmissionScreen(): React.ReactElement {
       { availabilityStatus: picker, note: note.trim() ? note.trim() : null },
       {
         onSuccess: () => {
+          void queryClient.invalidateQueries({ queryKey: ['availability', eventId] });
           if (myRow?.availabilityStatus) {
             analytics.track('availability_updated', {
               previousStatus: myRow.availabilityStatus,
@@ -121,7 +123,7 @@ export function AvailabilitySubmissionScreen(): React.ReactElement {
         },
       },
     );
-  }, [closeAfterConfirm, eventQuery.data, isOffline, locked, note, picker, submitMutation]);
+  }, [closeAfterConfirm, eventId, eventQuery.data, isOffline, locked, myRow?.availabilityStatus, note, picker, queryClient, submitMutation]);
 
   const event = eventQuery.data;
   const submitDisabled = isOffline || !picker || submitMutation.isPending;

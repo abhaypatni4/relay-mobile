@@ -92,6 +92,12 @@ export function EventDetailScreen(): React.ReactElement {
   const handled404 = useRef(false);
   const { teamMemberId } = useCurrentMember();
 
+  useFocusEffect(
+    useCallback(() => {
+      void queryClient.invalidateQueries({ queryKey: ['availability', eventId] });
+    }, [eventId, queryClient]),
+  );
+
   const q = useQuery({
     queryKey: ['eventDetail', teamId, eventId],
     queryFn: async () => {

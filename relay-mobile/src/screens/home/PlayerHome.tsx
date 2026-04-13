@@ -71,9 +71,26 @@ export function PlayerHome(): React.ReactElement {
 
   const upcomingTripIds = useMemo(() => upcomingTrips.map((e) => e.id), [upcomingTrips]);
 
-  const nextMatchTraining = events.find(
-    (e) => (e.type === 'match' || e.type === 'training') && e.status === 'active',
+  const nextMatchTraining = useMemo(() => {
+    return [...events]
+      .filter(
+        (e) =>
+          (e.type === 'match' || e.type === 'training') &&
+          e.status === 'active' &&
+          eventStartDate(e).getTime() >= now,
+      )
+      .sort((a, b) => eventStartDate(a).getTime() - eventStartDate(b).getTime())[0];
+  }, [events, now]);
+
+  console.log(
+    '[PlayerHome] all events:',
+    events?.map((e) => ({
+      id: e.id,
+      type: e.type,
+      status: e.status,
+    })),
   );
+  console.log('[PlayerHome] nextMatchTraining:', nextMatchTraining);
 
   const selectionAvail = useAvailability(nextMatchTraining?.id ?? null);
   const selectionRow = useMemo(
