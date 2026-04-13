@@ -18,13 +18,13 @@ export const invitationsController = {
     const result = await validateInvitationToken(token);
     if (!result.ok) {
       if (result.reason === 'expired') {
-        res.status(410).json({ error: 'expired' });
+        res.status(410).json({ error: 'expired', valid: false });
         return;
       }
-      res.status(404).json({ error: 'Not found' });
+      res.status(404).json({ error: 'Not found', valid: false });
       return;
     }
-    res.json({ teamName: result.teamName, sport: result.sport });
+    res.json({ teamName: result.teamName, sport: result.sport, valid: true });
   },
 
   accept: async (req: Request, res: Response): Promise<void> => {
