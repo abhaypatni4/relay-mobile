@@ -22,7 +22,7 @@ export function useSendSelectionNotifications(eventId: string) {
     onSuccess: (data) => {
       const n = data.selected + data.notSelected;
       addToast('success', `Selection notifications sent to ${String(n)} members`);
-      void queryClient.invalidateQueries({ queryKey: ['eventAvailability', teamId, eventId] });
+      void queryClient.invalidateQueries({ queryKey: ['availability', eventId] });
       void queryClient.invalidateQueries({ queryKey: ['teamEvents', teamId] });
     },
     onError: () => {

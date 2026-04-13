@@ -113,7 +113,7 @@ export default function App(): React.ReactElement {
           return (
             root === 'teamEvents' ||
             root === 'eventDetail' ||
-            root === 'eventAvailability' ||
+            root === 'availability' ||
             root === 'teamPosts' ||
             root === 'tripDocuments' ||
             root === 'emergencyInfo' ||

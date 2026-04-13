@@ -19,7 +19,7 @@ export function useOpenAvailabilityWindow() {
       analytics.track('availability_window_opened', { eventId });
     },
     onSuccess: (_d, eventId) => {
-      void queryClient.invalidateQueries({ queryKey: ['eventAvailability', teamId, eventId] });
+      void queryClient.invalidateQueries({ queryKey: ['availability', eventId] });
       void queryClient.invalidateQueries({ queryKey: ['teamEvents', teamId] });
     },
     onError: (err: unknown) => {

@@ -105,6 +105,8 @@ export function EventDetailScreen(): React.ReactElement {
 
   const isMatchOrTraining = q.data?.type === 'match' || q.data?.type === 'training';
   const availQ = useAvailability(isMatchOrTraining ? eventId : null);
+  console.log('[EventDetail] eventId:', eventId);
+  console.log('[EventDetail] availability:', availQ.data);
   const submitMutation = useSubmitAvailability(eventId);
   const notifyMutation = useSendSelectionNotifications(eventId);
   const openWindowMutation = useMutation({
@@ -112,7 +114,7 @@ export function EventDetailScreen(): React.ReactElement {
       await api.post(`/events/${eventId}/availability/open`);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['eventAvailability', teamId, eventId] });
+      await queryClient.invalidateQueries({ queryKey: ['availability', eventId] });
       addToast('success', 'Availability window opened');
     },
     onError: () => addToast('error', "Couldn't open availability."),
@@ -122,7 +124,7 @@ export function EventDetailScreen(): React.ReactElement {
       await api.post(`/events/${eventId}/availability/lock`);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['eventAvailability', teamId, eventId] });
+      await queryClient.invalidateQueries({ queryKey: ['availability', eventId] });
       addToast('success', 'Availability locked');
     },
     onError: () => addToast('error', "Couldn't lock availability."),

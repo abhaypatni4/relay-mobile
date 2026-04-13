@@ -4,9 +4,9 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Icon } from '@/components/foundation/Icon';
 import { Text } from '@/components/foundation/Text';
-import { SelectionStatusCard } from '@/components/data-display/SelectionStatusCard';
 import { eventStartDate } from '@/components/data-display/EventCard';
 import { PlayerTripCard, type TripCardData } from '@/components/data-display/TripCard';
 import { api } from '@/services/api';
@@ -210,7 +210,7 @@ export function PlayerHome(): React.ReactElement {
       </View>
 
       {tripCardData ? (
-        <View style={{ marginBottom: spacing.space12 }}>
+        <View style={{ marginBottom: spacing.space16 }}>
           <Text
             variant="caption"
             colorToken={color.textLabel}
@@ -223,12 +223,74 @@ export function PlayerHome(): React.ReactElement {
       ) : null}
 
       {nextMatchOrTraining ? (
-        <SelectionStatusCard
-          eventName={nextMatchOrTraining.name}
-          pending={!selectionNotified}
-          outcome={selectionRow?.selectionOutcome}
-          onPressToEvent={selectionNotified ? openSelectionEvent : undefined}
-        />
+        <View>
+          <Text
+            variant="caption"
+            colorToken={color.textLabel}
+            style={{ marginBottom: spacing.space8, letterSpacing: 1.2, textTransform: 'uppercase' }}
+          >
+            Selection status
+          </Text>
+          <Pressable
+            onPress={selectionNotified ? openSelectionEvent : undefined}
+            disabled={!selectionNotified}
+            style={{
+              borderRadius: spacing.space12,
+              backgroundColor: color.surfaceElevated,
+              borderWidth: 1,
+              borderColor: color.borderSubtle,
+              borderLeftWidth: spacing.space4,
+              borderLeftColor: !selectionNotified
+                ? color.actionPrimary
+                : selectionRow?.selectionOutcome === 'selected'
+                  ? color.stateSuccess
+                  : color.textDisabled,
+              paddingHorizontal: spacing.space20,
+              paddingVertical: spacing.space16,
+              shadowColor: color.shadow,
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.08,
+              shadowRadius: spacing.space8,
+              elevation: 2,
+              opacity: selectionNotified ? 1 : 0.96,
+            }}
+          >
+            {!selectionNotified ? (
+              <>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.space8 }}>
+                  <Icon name="calendar" size={spacing.space16} color={color.actionPrimary} />
+                </View>
+                <Text variant="body" style={{ fontWeight: '600', marginBottom: spacing.space4 }}>
+                  Awaiting selection
+                </Text>
+                <Text variant="caption" colorToken={color.textSecondary}>
+                  Your coach hasn&apos;t sent selection yet
+                </Text>
+              </>
+            ) : selectionRow?.selectionOutcome === 'selected' ? (
+              <>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.space8 }}>
+                  <Icon name="check" size={spacing.space24} color={color.stateSuccess} />
+                </View>
+                <Text variant="body" style={{ fontWeight: '700', marginBottom: spacing.space4 }}>
+                  You&apos;re in the squad
+                </Text>
+                <Text variant="caption" colorToken={color.textSecondary}>
+                  {nextMatchOrTraining.name}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text variant="body" style={{ fontWeight: '600', marginBottom: spacing.space4 }}>
+                  Not selected for this one
+                </Text>
+                <Text variant="caption" colorToken={color.textSecondary}>
+                  {nextMatchOrTraining.name}
+                </Text>
+              </>
+            )}
+          </Pressable>
+        </View>
       ) : null}
     </View>
   );

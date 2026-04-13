@@ -2,14 +2,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { api } from '@/services/api';
 import { analytics } from '@/services/analytics';
-import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import type { AvailabilityResponse } from '@/queries/useAvailability';
 import type { OperationalStatus } from '@/types/models';
 
 export function useSetOperationalStatus(eventId: string) {
   const queryClient = useQueryClient();
-  const teamId = useTeamStore((s) => s.activeTeamId);
   const addToast = useUiStore((s) => s.addToast);
 
   return useMutation({
@@ -26,7 +24,7 @@ export function useSetOperationalStatus(eventId: string) {
       });
     },
     onMutate: async (vars) => {
-      const qk = ['eventAvailability', teamId, eventId] as const;
+      const qk = ['availability', eventId] as const;
       await queryClient.cancelQueries({ queryKey: qk });
       const previous = queryClient.getQueryData<AvailabilityResponse>(qk);
       if (previous) {
@@ -41,7 +39,7 @@ export function useSetOperationalStatus(eventId: string) {
     },
     onError: (err: unknown, _vars, ctx) => {
       analytics.track('write_action_failed', { actionType: 'operational_status_set', retried: false });
-      const qk = ['eventAvailability', teamId, eventId] as const;
+      const qk = ['availability', eventId] as const;
       if (ctx?.previous) {
         queryClient.setQueryData(qk, ctx.previous);
       }
@@ -52,7 +50,7 @@ export function useSetOperationalStatus(eventId: string) {
       addToast('error', "Couldn't update status.");
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['eventAvailability', teamId, eventId] });
+      void queryClient.invalidateQueries({ queryKey: ['availability', eventId] });
     },
   });
 }

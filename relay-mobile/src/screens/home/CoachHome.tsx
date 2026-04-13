@@ -7,7 +7,6 @@ import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { Icon } from '@/components/foundation/Icon';
 import { Text } from '@/components/foundation/Text';
-import { AvailabilitySummaryCard } from '@/components/data-display/AvailabilitySummaryCard';
 import { eventStartDate } from '@/components/data-display/EventCard';
 import { api } from '@/services/api';
 import { analytics } from '@/services/analytics';
@@ -65,7 +64,9 @@ export function CoachHome(): React.ReactElement {
     const u = [...events]
       .filter(
         (e) =>
-          (e.type === 'match' || e.type === 'training') && eventStartDate(e).getTime() >= now,
+          (e.type === 'match' || e.type === 'training') &&
+          e.status === 'active' &&
+          eventStartDate(e).getTime() >= now,
       )
       .sort((a, b) => eventStartDate(a).getTime() - eventStartDate(b).getTime());
     return u[0];
@@ -73,6 +74,25 @@ export function CoachHome(): React.ReactElement {
 
   const availQ = useAvailability(nextNonTrip?.id ?? null);
   const hasActiveAvailabilityWindow = Boolean(nextNonTrip && availQ.data?.window);
+  const availabilityCounts = useMemo(() => {
+    const rows = availQ.data?.submissions ?? [];
+    let available = 0;
+    let limited = 0;
+    let unavailable = 0;
+    let pending = 0;
+    for (const row of rows) {
+      if (row.availabilityStatus === 'available') {
+        available += 1;
+      } else if (row.availabilityStatus === 'limited') {
+        limited += 1;
+      } else if (row.availabilityStatus === 'unavailable') {
+        unavailable += 1;
+      } else {
+        pending += 1;
+      }
+    }
+    return { available, limited, unavailable, pending };
+  }, [availQ.data?.submissions]);
 
   const openEvent = (e: ApiEventListItem) => {
     if (e.type === 'trip') {
@@ -118,9 +138,43 @@ export function CoachHome(): React.ReactElement {
 
   return (
     <View style={{ flex: 1, padding: spacing.space16, backgroundColor: color.surfaceBase }}>
-      <Text variant="title" style={{ marginBottom: spacing.space16 }}>
-        Hey, {firstName}
-      </Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.space16 }}>
+        <Text variant="title">Hey, {firstName}</Text>
+        <View
+          style={{
+            width: spacing.space32,
+            height: spacing.space32,
+            borderRadius: spacing.space16,
+            borderWidth: 1,
+            borderColor: color.borderDefault,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: color.surfaceElevated,
+          }}
+        >
+          <Text variant="label" style={{ fontSize: spacing.space16 }}>
+            🔔
+          </Text>
+          <View
+            style={{
+              position: 'absolute',
+              top: -spacing.space4,
+              right: -spacing.space4,
+              minWidth: spacing.space16,
+              height: spacing.space16,
+              borderRadius: spacing.space8,
+              backgroundColor: color.stateWarning,
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingHorizontal: spacing.space4,
+            }}
+          >
+            <Text variant="caption" colorToken={color.actionOnPrimary}>
+              0
+            </Text>
+          </View>
+        </View>
+      </View>
 
       {nextUpcoming && nextUpcoming.type === 'trip' ? (
         <View style={{ marginBottom: spacing.space20 }}>
@@ -182,15 +236,90 @@ export function CoachHome(): React.ReactElement {
       ) : null}
 
       {nextNonTrip ? (
-        <AvailabilitySummaryCard
-          event={nextNonTrip}
-          windowOpen={Boolean(availQ.data?.window)}
-          submissions={availQ.data?.submissions ?? []}
-          isOpening={openWindow.isPending}
-          onOpenWindow={() => openWindow.mutate(nextNonTrip.id)}
-          onPressRoster={openRoster}
-          onPressEvent={() => openEvent(nextNonTrip)}
-        />
+        <View style={{ marginBottom: spacing.space20 }}>
+          <Text
+            variant="caption"
+            colorToken={color.textLabel}
+            style={{ marginBottom: spacing.space8, letterSpacing: 1.2, textTransform: 'uppercase' }}
+          >
+            Availability
+          </Text>
+          <Text variant="body" style={{ marginBottom: spacing.space12, fontWeight: '600' }}>
+            {nextNonTrip.name}
+          </Text>
+          {!availQ.data?.window ? (
+            <View
+              style={{
+                borderRadius: spacing.space12,
+                backgroundColor: color.surfaceElevated,
+                borderWidth: 1,
+                borderColor: color.borderSubtle,
+                padding: spacing.space16,
+                marginBottom: spacing.space12,
+              }}
+            >
+              <Text variant="body" colorToken={color.textSecondary} style={{ marginBottom: spacing.space8 }}>
+                Availability not opened yet
+              </Text>
+              <Pressable onPress={() => openWindow.mutate(nextNonTrip.id)} disabled={openWindow.isPending}>
+                <Text variant="label" colorToken={color.actionPrimary}>
+                  {openWindow.isPending ? 'Opening…' : 'Open availability'}
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <View style={{ flexDirection: 'row', marginBottom: spacing.space12 }}>
+                {[
+                  { label: 'Available', value: availabilityCounts.available, dot: color.stateSuccess },
+                  { label: 'Limited', value: availabilityCounts.limited, dot: color.stateWarning },
+                  { label: 'Unavailable', value: availabilityCounts.unavailable, dot: color.stateError },
+                  { label: 'Pending', value: availabilityCounts.pending, dot: color.textDisabled },
+                ].map((chip) => (
+                  <View
+                    key={chip.label}
+                    style={{
+                      flex: 1,
+                      borderRadius: spacing.space8,
+                      backgroundColor: color.surfaceElevated,
+                      borderWidth: 1,
+                      borderColor: color.borderSubtle,
+                      marginRight: chip.label === 'Pending' ? 0 : spacing.space8,
+                      paddingVertical: spacing.space8,
+                      alignItems: 'center',
+                      shadowColor: color.shadow,
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.06,
+                      shadowRadius: spacing.space4,
+                      elevation: 1,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: spacing.space8,
+                        height: spacing.space8,
+                        borderRadius: spacing.space4,
+                        backgroundColor: chip.dot,
+                        marginBottom: spacing.space4,
+                      }}
+                    />
+                    <Text variant="title" style={{ fontWeight: '700', marginBottom: spacing.space4 }}>
+                      {chip.value}
+                    </Text>
+                    <Text variant="caption" colorToken={color.textSecondary}>
+                      {chip.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              <Pressable onPress={openRoster}>
+                <Text variant="label" colorToken={color.actionPrimary}>
+                  View full roster →
+                </Text>
+              </Pressable>
+            </>
+          )}
+        </View>
       ) : (
         <View
           style={{
@@ -206,7 +335,7 @@ export function CoachHome(): React.ReactElement {
         >
           <Icon name="calendar" size={spacing.space24} color={color.textDisabled} />
           <Text variant="label" colorToken={color.textSecondary} style={{ marginTop: spacing.space12 }}>
-            No matches or training scheduled
+            No upcoming matches or training
           </Text>
           <Text variant="caption" colorToken={color.textLabel} style={{ marginTop: spacing.space4 }}>
             Trips and events will appear here
@@ -226,12 +355,13 @@ export function CoachHome(): React.ReactElement {
           onPress={hasActiveAvailabilityWindow ? openRoster : undefined}
           disabled={!hasActiveAvailabilityWindow}
           style={{
-            minHeight: spacing.space48,
+            minHeight: 56,
             borderRadius: spacing.space12,
             borderWidth: 1,
             borderColor: color.borderSubtle,
             backgroundColor: color.surfaceElevated,
             paddingHorizontal: spacing.space16,
+            paddingVertical: spacing.space12,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -242,13 +372,13 @@ export function CoachHome(): React.ReactElement {
             <Icon name="team" size={spacing.space20} color={hasActiveAvailabilityWindow ? color.actionPrimary : color.textDisabled} />
             <Text
               variant="label"
-              colorToken={hasActiveAvailabilityWindow ? color.textPrimary : color.textSecondary}
+              colorToken={hasActiveAvailabilityWindow ? color.actionPrimary : color.textSecondary}
               style={{ marginLeft: spacing.space8 }}
             >
               {hasActiveAvailabilityWindow ? 'View availability roster' : 'No active availability window'}
             </Text>
           </View>
-          <Text variant="label" colorToken={color.textDisabled}>
+          <Text variant="label" colorToken={hasActiveAvailabilityWindow ? color.actionPrimary : color.textDisabled}>
             ›
           </Text>
         </Pressable>

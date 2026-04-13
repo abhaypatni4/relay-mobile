@@ -39,16 +39,15 @@ export function useAvailability(
   eventId: string | null,
   options?: { pollEvery30sWhileFocused?: boolean },
 ): ReturnType<typeof useQuery<AvailabilityResponse>> {
-  const teamId = useTeamStore((s) => s.activeTeamId);
   const focused = useIsFocused();
   const poll = Boolean(options?.pollEvery30sWhileFocused && focused);
   return useQuery({
-    queryKey: ['eventAvailability', teamId, eventId],
+    queryKey: ['availability', eventId],
     queryFn: async () => {
       const { data } = await api.get<AvailabilityResponse>(`/events/${eventId}/availability`);
       return data;
     },
-    enabled: Boolean(teamId && eventId),
+    enabled: Boolean(eventId),
     refetchInterval: poll ? 30_000 : false,
     refetchIntervalInBackground: false,
   });

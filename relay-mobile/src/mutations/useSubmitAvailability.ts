@@ -3,14 +3,12 @@ import axios from 'axios';
 import { api } from '@/services/api';
 import { analytics } from '@/services/analytics';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
-import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import type { AvailabilityResponse } from '@/queries/useAvailability';
 import type { AvailabilityStatus } from '@/types/models';
 
 export function useSubmitAvailability(eventId: string) {
   const queryClient = useQueryClient();
-  const teamId = useTeamStore((s) => s.activeTeamId);
   const { teamMemberId } = useCurrentMember();
   const addToast = useUiStore((s) => s.addToast);
 
@@ -27,7 +25,7 @@ export function useSubmitAvailability(eventId: string) {
       });
     },
     onMutate: async (vars) => {
-      const qk = ['eventAvailability', teamId, eventId] as const;
+      const qk = ['availability', eventId] as const;
       await queryClient.cancelQueries({ queryKey: qk });
       const previous = queryClient.getQueryData<AvailabilityResponse>(qk);
       if (previous && teamMemberId) {
@@ -51,7 +49,7 @@ export function useSubmitAvailability(eventId: string) {
     },
     onError: (err: unknown, _vars, ctx) => {
       analytics.track('write_action_failed', { actionType: 'availability_submit', retried: false });
-      const qk = ['eventAvailability', teamId, eventId] as const;
+      const qk = ['availability', eventId] as const;
       if (ctx?.previous) {
         queryClient.setQueryData(qk, ctx.previous);
       }
@@ -71,7 +69,7 @@ export function useSubmitAvailability(eventId: string) {
       addToast('error', "Couldn't save — try again.");
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['eventAvailability', teamId, eventId] });
+      void queryClient.invalidateQueries({ queryKey: ['availability', eventId] });
     },
   });
 }
