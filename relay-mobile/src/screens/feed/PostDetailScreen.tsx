@@ -28,7 +28,7 @@ export function PostDetailScreen(): React.ReactElement {
   const navigation = useNavigation<NativeStackNavigationProp<FeedStackParamList, 'PostDetail'>>();
   const route = useRoute<RouteProp<FeedStackParamList, 'PostDetail'>>();
   const { postId } = route.params;
-  const { role } = useCurrentMember();
+  const { role, teamMemberId } = useCurrentMember();
   const teamId = useTeamStore((s) => s.activeTeamId);
   const addToast = useUiStore((s) => s.addToast);
   const queryClient = useQueryClient();
@@ -186,9 +186,11 @@ export function PostDetailScreen(): React.ReactElement {
     return typeof raw === 'string' ? raw : raw.state;
   })();
   const canAcknowledgeRole = Boolean(role && role !== 'coordinator');
+  const isCreator = Boolean(post?.createdBy && teamMemberId && post.createdBy === teamMemberId);
   const showAcknowledgeButton =
     Boolean(post?.requiresAcknowledgment) &&
     canAcknowledgeRole &&
+    !isCreator &&
     deliveryState !== 'acknowledged';
 
   return (
