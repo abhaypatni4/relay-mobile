@@ -62,8 +62,8 @@ export function usePublishPost() {
       const prev = queryClient.getQueryData<PostsResponse>(['teamPosts', teamId]);
       return { prev };
     },
-    onSettled: (_data, _err, _vars, ctx) => {
-      if (ctx?.prev) {
+    onSettled: (_data, err, _vars, ctx) => {
+      if (err && ctx?.prev) {
         queryClient.setQueryData(['teamPosts', teamId], ctx.prev);
       }
     },

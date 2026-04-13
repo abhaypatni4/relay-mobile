@@ -13,6 +13,7 @@ import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { usePosts } from '@/queries/usePosts';
+import { useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
@@ -31,6 +32,17 @@ export function FeedScreen(): React.ReactElement {
   const teamId = useTeamStore((s) => s.activeTeamId);
   const isOffline = useUiStore((s) => s.isOffline);
   const canCreate = role ? canCreatePosts(role) : false;
+  const queryClient = useQueryClient();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!teamId) {
+        return;
+      }
+      void queryClient.invalidateQueries({ queryKey: ['teamPosts', teamId] });
+      void queryClient.invalidateQueries({ queryKey: ['teamPosts'] });
+    }, [queryClient, teamId]),
+  );
 
   const q = usePosts({ pollEvery120sWhileFocused: true });
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useQueryClient } from '@tanstack/react-query';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Text } from '@/components/foundation/Text';
 import { TextAreaInput } from '@/components/input/TextAreaInput';
@@ -70,6 +71,7 @@ export function PostCreationScreen(): React.ReactElement {
   const [recipientError, setRecipientError] = useState<string | null>(null);
 
   const publishMutation = usePublishPost();
+  const queryClient = useQueryClient();
   const eventsQuery = useTeamEvents(teamId);
 
   const hasActiveTrip = (eventsQuery.data ?? []).some((e) => e.status === 'active' && e.type === 'trip');
@@ -145,6 +147,8 @@ export function PostCreationScreen(): React.ReactElement {
             postType: selectedType,
             recipientCount,
           });
+          void queryClient.invalidateQueries({ queryKey: ['teamPosts', teamId] });
+          void queryClient.invalidateQueries({ queryKey: ['teamPosts'] });
           if (teamMemberId) {
             clearPostDraft(teamMemberId);
           }

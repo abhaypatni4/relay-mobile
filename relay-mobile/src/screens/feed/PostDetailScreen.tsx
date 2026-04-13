@@ -1,10 +1,10 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import React, { useEffect, useRef } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Text } from '@/components/foundation/Text';
@@ -31,6 +31,7 @@ export function PostDetailScreen(): React.ReactElement {
   const { role } = useCurrentMember();
   const teamId = useTeamStore((s) => s.activeTeamId);
   const addToast = useUiStore((s) => s.addToast);
+  const queryClient = useQueryClient();
   const handled404 = useRef(false);
   const [showMembers, setShowMembers] = React.useState(false);
 
@@ -64,6 +65,81 @@ export function PostDetailScreen(): React.ReactElement {
       navigation.navigate('Feed');
     }
   }, [addToast, navigation, q.error, q.isError, q.isFetched]);
+
+  const acknowledgeMutation = useMutation({
+    mutationFn: async () => {
+      if (!teamId || !postId) {
+        return;
+      }
+      await api.post(`/teams/${teamId}/posts/${postId}/acknowledge`);
+    },
+    onMutate: async () => {
+      if (!teamId || !postId) {
+        return;
+      }
+      await queryClient.cancelQueries({ queryKey: ['postDetail', teamId, postId] });
+      const previousDetail = queryClient.getQueryData<Post>(['postDetail', teamId, postId]);
+      const normalizeState = (
+        state: Post['currentUserDeliveryState'],
+      ): { state: DeliveryState; seenAt: string | null; acknowledgedAt: string | null } =>
+        typeof state === 'string'
+          ? { state, seenAt: null, acknowledgedAt: null }
+          : state;
+      const nowIso = new Date().toISOString();
+      queryClient.setQueryData<Post>(['postDetail', teamId, postId], (prev) => {
+        if (!prev) {
+          return prev;
+        }
+        const cur = normalizeState(prev.currentUserDeliveryState);
+        return {
+          ...prev,
+          currentUserDeliveryState: {
+            state: 'acknowledged',
+            seenAt: cur.seenAt ?? nowIso,
+            acknowledgedAt: nowIso,
+          },
+          currentUserAcknowledgedAt: nowIso,
+        };
+      });
+      queryClient.setQueryData<{ posts: Post[] }>(['teamPosts', teamId], (prev) => {
+        if (!prev) {
+          return prev;
+        }
+        return {
+          posts: prev.posts.map((p) =>
+            p.id === postId
+              ? {
+                  ...p,
+                  currentUserDeliveryState: {
+                    state: 'acknowledged',
+                    seenAt:
+                      typeof p.currentUserDeliveryState === 'string'
+                        ? nowIso
+                        : (p.currentUserDeliveryState.seenAt ?? nowIso),
+                    acknowledgedAt: nowIso,
+                  },
+                  currentUserAcknowledgedAt: nowIso,
+                }
+              : p,
+          ),
+        };
+      });
+      return { previousDetail };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (teamId && postId && ctx?.previousDetail) {
+        queryClient.setQueryData(['postDetail', teamId, postId], ctx.previousDetail);
+      }
+      addToast('error', "Couldn't save — check your connection");
+    },
+    onSuccess: async () => {
+      if (!teamId) {
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ['postDetail', teamId, postId] });
+      await queryClient.invalidateQueries({ queryKey: ['teamPosts', teamId] });
+    },
+  });
 
   if (q.isLoading) {
     return (
@@ -102,6 +178,18 @@ export function PostDetailScreen(): React.ReactElement {
     if (state === 'seen') return '👁';
     return '○';
   };
+  const deliveryState = (() => {
+    const raw = post?.currentUserDeliveryState;
+    if (!raw) {
+      return 'notSeen' as DeliveryState;
+    }
+    return typeof raw === 'string' ? raw : raw.state;
+  })();
+  const canAcknowledgeRole = Boolean(role && role !== 'coordinator');
+  const showAcknowledgeButton =
+    Boolean(post?.requiresAcknowledgment) &&
+    canAcknowledgeRole &&
+    deliveryState !== 'acknowledged';
 
   return (
     <ScreenContainer scrollable>
@@ -109,6 +197,26 @@ export function PostDetailScreen(): React.ReactElement {
         {title}
       </Text>
       {body ? <Text variant="body">{body}</Text> : <Text variant="body">No content.</Text>}
+      {showAcknowledgeButton ? (
+        <Pressable
+          onPress={() => acknowledgeMutation.mutate()}
+          disabled={acknowledgeMutation.isPending}
+          style={({ pressed }) => ({
+            marginTop: spacing.space16,
+            borderRadius: spacing.space12,
+            backgroundColor: color.actionPrimary,
+            paddingVertical: spacing.space12,
+            alignItems: 'center',
+            opacity: pressed || acknowledgeMutation.isPending ? 0.85 : 1,
+          })}
+          accessibilityRole="button"
+          accessibilityLabel="Acknowledge post"
+        >
+          <Text variant="label" style={{ color: color.actionOnPrimary }}>
+            {acknowledgeMutation.isPending ? 'Saving...' : "I've got it"}
+          </Text>
+        </Pressable>
+      ) : null}
       {showDelivery && delivery ? (
         <View style={{ marginTop: spacing.space20 }}>
           <Text
