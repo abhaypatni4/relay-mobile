@@ -40,6 +40,19 @@ function isUnread(state: DeliveryState): boolean {
   return state === 'notSeen';
 }
 
+function normalizeDeliveryState(
+  state: Post['currentUserDeliveryState'],
+): { state: DeliveryState; seenAt: string | null; acknowledgedAt: string | null } {
+  if (typeof state === 'string') {
+    return {
+      state,
+      seenAt: null,
+      acknowledgedAt: state === 'acknowledged' ? null : null,
+    };
+  }
+  return state;
+}
+
 export interface PostCardProps {
   post: Post;
   onPress: () => void;
@@ -47,10 +60,11 @@ export interface PostCardProps {
 
 export function PostCard({ post, onPress }: PostCardProps): React.ReactElement {
   const chip = useMemo(() => typeLabel(post.type), [post.type]);
+  const delivery = normalizeDeliveryState(post.currentUserDeliveryState);
   const urgentBorder = post.type === 'urgentAlert' || post.isUrgent;
-  const unread = isUnread(post.currentUserDeliveryState);
+  const unread = isUnread(delivery.state);
   const requiresAck = post.requiresAcknowledgment;
-  const isAcked = post.currentUserDeliveryState === 'acknowledged';
+  const isAcked = delivery.state === 'acknowledged';
 
   const a11yState = unread ? 'Unread' : 'Read';
   const a11yType = chip;
@@ -86,6 +100,11 @@ export function PostCard({ post, onPress }: PostCardProps): React.ReactElement {
           </Text>
         </View>
         <View style={{ flex: 1 }} />
+        {unread ? (
+          <Text variant="label" style={{ color: color.stateWarning, marginRight: spacing.space8 }}>
+            ●
+          </Text>
+        ) : null}
         {requiresAck ? (
           <View
             style={{

@@ -14,6 +14,7 @@ import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import { usePublishPost } from '@/mutations/usePublishPost';
+import { useTeamEvents } from '@/hooks/useTeamEvents';
 import { loadPostDraft, savePostDraft, clearPostDraft, type PostDraftPayload } from '@/services/postDraftStorage';
 import { analytics } from '@/services/analytics';
 import type { PostType, RecipientGroup } from '@/types/models';
@@ -66,12 +67,12 @@ export function PostCreationScreen(): React.ReactElement {
   const [content, setContent] = useState('');
   const [showDraftPrompt, setShowDraftPrompt] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [recipientError, setRecipientError] = useState<string | null>(null);
 
   const publishMutation = usePublishPost();
+  const eventsQuery = useTeamEvents(teamId);
 
-  // For MVP we treat hasTravelingSquad as true when there is any active trip; here assume true.
-  // In a fuller implementation we would query active trip state.
-  const hasTravelingSquad = true;
+  const hasActiveTrip = (eventsQuery.data ?? []).some((e) => e.status === 'active' && e.type === 'trip');
 
   useEffect(() => {
     if (!teamMemberId || !canCreate) {
@@ -124,6 +125,11 @@ export function PostCreationScreen(): React.ReactElement {
     if (!teamId || !selectedType || !selectedGroup) {
       return;
     }
+    if (selectedGroup === 'travelingSquad' && !hasActiveTrip) {
+      setRecipientError('No active trip. Select another group.');
+      return;
+    }
+    setRecipientError(null);
     publishMutation.mutate(
       {
         type: selectedType,
@@ -133,10 +139,11 @@ export function PostCreationScreen(): React.ReactElement {
         isUrgent,
       },
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
+          const recipientCount = response.recipientCount ?? 0;
           analytics.track('post_published', {
             postType: selectedType,
-            recipientCount: selectedGroup === 'fullTeam' ? 0 : 0,
+            recipientCount,
           });
           if (teamMemberId) {
             clearPostDraft(teamMemberId);
@@ -235,9 +242,19 @@ export function PostCreationScreen(): React.ReactElement {
           </Text>
           <RecipientSelector
             selectedGroup={selectedGroup}
-            onSelect={setSelectedGroup}
-            hasTravelingSquad={hasTravelingSquad}
+            onSelect={(group) => {
+              setSelectedGroup(group);
+              if (group !== 'travelingSquad' || hasActiveTrip) {
+                setRecipientError(null);
+              }
+            }}
+            hasActiveTrip={hasActiveTrip}
           />
+          {recipientError ? (
+            <Text variant="caption" style={{ color: color.stateDestructive, marginTop: spacing.space8 }}>
+              {recipientError}
+            </Text>
+          ) : null}
 
           <View style={{ height: spacing.space24 }} />
 

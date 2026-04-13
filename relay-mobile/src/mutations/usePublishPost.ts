@@ -23,7 +23,7 @@ export function usePublishPost() {
       if (useUiStore.getState().isOffline) {
         analytics.track('offline_write_attempted', { actionType: 'post_publish' });
       }
-      const { data } = await api.post<{ postId: string }>(`/teams/${teamId}/posts`, body);
+      const { data } = await api.post<{ postId: string; recipientCount: number }>(`/teams/${teamId}/posts`, body);
       analytics.track('post_created', {
         postType: body.type,
         recipientGroup: body.recipientGroup,

@@ -28,7 +28,14 @@ export type PostType =
   | 'generalAnnouncement'
   | 'urgentAlert';
 
-export type RecipientGroup = 'fullTeam' | 'travelingSquad' | 'coachingStaff' | 'allStaff';
+export type RecipientGroup =
+  | 'fullTeam'
+  | 'travelingSquad'
+  | 'players'
+  | 'coaches'
+  | 'staff'
+  | 'coachingStaff'
+  | 'allStaff';
 
 export type DeliveryState = 'notSeen' | 'seen' | 'acknowledged';
 
@@ -177,17 +184,36 @@ export interface Post {
   createdByName: string;
   createdAt: string;
   deletedAt: string | null;
-  currentUserDeliveryState: DeliveryState;
+  currentUserDeliveryState:
+    | DeliveryState
+    | {
+        state: DeliveryState;
+        seenAt: string | null;
+        acknowledgedAt: string | null;
+      };
+  currentUserSeenAt?: string | null;
   currentUserAcknowledgedAt: string | null;
   deliverySummary?: DeliveryStateSummary;
 }
 
 export interface DeliveryStateSummary {
+  total?: number;
+  notSeen?: number;
+  seen?: number;
+  acknowledged?: number;
   sentCount: number;
   seenCount: number;
   acknowledgedCount: number;
   overdueCount: number;
+  members?: DeliveryMemberState[];
   overdueMembers?: OverdueMember[];
+}
+
+export interface DeliveryMemberState {
+  memberId: string;
+  memberName: string;
+  state: DeliveryState;
+  seenAt: string | null;
 }
 
 export interface OverdueMember {

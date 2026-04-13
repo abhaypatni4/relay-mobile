@@ -13,6 +13,8 @@ import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { usePosts } from '@/queries/usePosts';
+import { api } from '@/services/api';
+import { useTeamStore } from '@/store/teamStore';
 import { useUiStore } from '@/store/uiStore';
 import type { FeedStackParamList } from '@/types/navigation';
 import { canCreatePosts } from '@/utils/roles';
@@ -26,18 +28,40 @@ export function FeedScreen(): React.ReactElement {
 
   const navigation = useNavigation<NativeStackNavigationProp<FeedStackParamList, 'Feed'>>();
   const { role } = useCurrentMember();
+  const teamId = useTeamStore((s) => s.activeTeamId);
   const isOffline = useUiStore((s) => s.isOffline);
   const canCreate = role ? canCreatePosts(role) : false;
 
   const q = usePosts({ pollEvery120sWhileFocused: true });
 
   const posts = q.data?.posts ?? [];
+  const seenMarkedRef = React.useRef<Set<string>>(new Set());
 
   const renderItem = ({ item }: { item: (typeof posts)[number] }) => (
     <PostCard post={item} onPress={() => navigation.navigate('PostDetail', { postId: item.id })} />
   );
 
   const showEmpty = q.isSuccess && posts.length === 0;
+  const onViewableItemsChanged = React.useRef(
+    ({ viewableItems }: { viewableItems: Array<{ item: (typeof posts)[number] | null }> }) => {
+      if (!teamId) {
+        return;
+      }
+      for (const viewable of viewableItems) {
+        const post = viewable.item;
+        if (!post) {
+          continue;
+        }
+        if (seenMarkedRef.current.has(post.id)) {
+          continue;
+        }
+        seenMarkedRef.current.add(post.id);
+        void api.post(`/teams/${teamId}/posts/${post.id}/seen`).catch(() => {
+          /* best effort */
+        });
+      }
+    },
+  ).current;
 
   return (
     <ScreenContainer scrollable={false}>
@@ -57,6 +81,8 @@ export function FeedScreen(): React.ReactElement {
             data={posts}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
+            onViewableItemsChanged={onViewableItemsChanged}
+            viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
             contentContainerStyle={{ paddingBottom: spacing.space24 }}
           />
         )}

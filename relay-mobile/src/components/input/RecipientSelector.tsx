@@ -10,7 +10,7 @@ import type { RecipientGroup } from '@/types/models';
 export interface RecipientSelectorProps {
   selectedGroup: RecipientGroup | null;
   onSelect: (g: RecipientGroup) => void;
-  hasTravelingSquad: boolean;
+  hasActiveTrip?: boolean;
 }
 
 function label(g: RecipientGroup): string {
@@ -18,9 +18,15 @@ function label(g: RecipientGroup): string {
     case 'fullTeam':
       return 'Full Team';
     case 'travelingSquad':
-      return 'Traveling Squad';
+      return 'Traveling squad';
+    case 'players':
+      return 'Players only';
+    case 'coaches':
+      return 'Coaches only';
+    case 'staff':
+      return 'Staff only';
     case 'coachingStaff':
-      return 'Coaching Staff Only';
+      return 'Coaching staff';
     case 'allStaff':
       return 'All Staff';
   }
@@ -31,32 +37,35 @@ const ROW_H = 56;
 export function RecipientSelector({
   selectedGroup,
   onSelect,
-  hasTravelingSquad,
+  hasActiveTrip = true,
 }: RecipientSelectorProps): React.ReactElement {
-  const options: RecipientGroup[] = [
-    'fullTeam',
-    ...(hasTravelingSquad ? (['travelingSquad'] as const) : []),
-    'coachingStaff',
-    'allStaff',
-  ];
+  const options: RecipientGroup[] = ['fullTeam', 'players', 'coachingStaff', 'travelingSquad'];
 
   return (
     <View>
       {options.map((g, idx) => {
         const selected = selectedGroup === g;
+        const disabled = g === 'travelingSquad' && !hasActiveTrip;
         return (
           <View key={g}>
             <Pressable
-              onPress={() => onSelect(g)}
+              onPress={() => {
+                if (disabled) {
+                  return;
+                }
+                onSelect(g);
+              }}
               accessibilityRole="button"
               accessibilityLabel={`${label(g)}${selected ? ', selected' : ''}`}
+              disabled={disabled}
               style={({ pressed }) => ({
                 minHeight: ROW_H,
                 paddingVertical: spacing.space12,
                 paddingHorizontal: spacing.space16,
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: pressed ? color.surfaceInput : 'transparent',
+                opacity: disabled ? 0.5 : 1,
+                backgroundColor: pressed && !disabled ? color.surfaceInput : 'transparent',
               })}
             >
               <Text variant="body" style={{ flex: 1 }}>
@@ -64,6 +73,14 @@ export function RecipientSelector({
               </Text>
               {selected ? <Icon name="check" size={18} color={color.stateSuccess} /> : null}
             </Pressable>
+            {g === 'travelingSquad' && !hasActiveTrip ? (
+              <Text
+                variant="caption"
+                style={{ color: color.textSecondary, paddingHorizontal: spacing.space16, paddingBottom: spacing.space8 }}
+              >
+                Only available when a trip is active
+              </Text>
+            ) : null}
             {idx < options.length - 1 ? <Divider /> : null}
           </View>
         );
