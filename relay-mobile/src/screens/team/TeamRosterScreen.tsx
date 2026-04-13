@@ -2,7 +2,7 @@ import { analytics } from '@/services/analytics';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useMemo } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
+import { Alert, FlatList, Pressable, View } from 'react-native';
 import { Text } from '@/components/foundation/Text';
 import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
@@ -12,12 +12,15 @@ import {
   type RosterMemberRow,
   useMembers,
 } from '@/hooks/useMembers';
+import { performLogout } from '@/services/api';
 import { useTeamStore } from '@/store/teamStore';
 import { color } from '@/tokens/colors';
 import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
 import type { AppStackParamList } from '@/types/navigation';
 import type { OnboardingState } from '@/types/models';
+
+const MIN_TOUCH_TARGET = 48; // WCAG minimum touch target
 
 function isCoordinatorDetailRow(m: RosterMemberRow): m is CoordinatorRosterMember {
   return 'onboardingState' in m;
@@ -33,6 +36,32 @@ function formatRoleLabel(m: BasicRosterMember | CoordinatorRosterMember): string
 
 function isPending(state: OnboardingState): boolean {
   return state === 'invited' || state === 'profileIncomplete';
+}
+
+function SignOutButton(): React.ReactElement {
+  return (
+    <Pressable
+      onPress={() => {
+        Alert.alert('Sign out', 'Are you sure you want to sign out?', [
+          {
+            text: 'Sign out',
+            style: 'destructive',
+            onPress: () => {
+              void performLogout();
+            },
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ]);
+      }}
+      style={{ minHeight: MIN_TOUCH_TARGET, justifyContent: 'center', alignItems: 'center' }}
+      accessibilityRole="button"
+      accessibilityLabel="Sign out"
+    >
+      <Text variant="label" colorToken={color.stateError}>
+        Sign out
+      </Text>
+    </Pressable>
+  );
 }
 
 export function TeamRosterScreen(): React.ReactElement {
@@ -169,6 +198,9 @@ export function TeamRosterScreen(): React.ReactElement {
         <Text variant="body" colorToken={color.textSecondary}>
           Join or create a team to see the roster.
         </Text>
+        <View style={{ marginTop: spacing.space24 }}>
+          <SignOutButton />
+        </View>
       </ScreenContainer>
     );
   }
@@ -182,6 +214,9 @@ export function TeamRosterScreen(): React.ReactElement {
         {Array.from({ length: 8 }).map((_, i) => (
           <SkeletonLoader key={i} variant="listRow" style={{ marginBottom: spacing.space8 }} />
         ))}
+        <View style={{ marginTop: spacing.space24 }}>
+          <SignOutButton />
+        </View>
       </ScreenContainer>
     );
   }
@@ -195,6 +230,9 @@ export function TeamRosterScreen(): React.ReactElement {
         <Text variant="body" colorToken={color.textSecondary}>
           No one is on this team yet. Invite members to get started.
         </Text>
+        <View style={{ marginTop: spacing.space24 }}>
+          <SignOutButton />
+        </View>
       </ScreenContainer>
     );
   }
@@ -210,6 +248,11 @@ export function TeamRosterScreen(): React.ReactElement {
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         ListHeaderComponent={header}
+        ListFooterComponent={
+          <View style={{ marginTop: spacing.space24 }}>
+            <SignOutButton />
+          </View>
+        }
         ListHeaderComponentStyle={isCoordinator ? { marginBottom: spacing.space8 } : undefined}
         contentContainerStyle={{ paddingBottom: spacing.space32 }}
       />

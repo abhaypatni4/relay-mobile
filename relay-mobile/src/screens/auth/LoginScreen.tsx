@@ -11,7 +11,6 @@ import { resetToMainApp } from '@/navigation/navigationRef';
 import { api, saveAuthSession } from '@/services/api';
 import { bootstrapSessionAfterAuth } from '@/services/session';
 import { analytics } from '@/services/analytics';
-import { apiBaseUrl } from '@/services/env';
 import { useAuthStore } from '@/store/authStore';
 import { useUiStore } from '@/store/uiStore';
 import { color } from '@/tokens/colors';
@@ -74,9 +73,6 @@ export function LoginScreen(): React.ReactElement {
       </Text>
       <Text variant="body" colorToken={color.textSecondary} style={{ marginBottom: spacing.space24 }}>
         Sign in with the email or phone you used to register.
-      </Text>
-      <Text variant="label" style={{ fontSize: 10, color: 'red', textAlign: 'center', marginBottom: spacing.space12 }}>
-        API: {apiBaseUrl}
       </Text>
       <TextInput
         label="Email or phone"

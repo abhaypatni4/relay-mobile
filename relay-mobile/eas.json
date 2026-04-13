@@ -5,6 +5,15 @@
       "android": {
         "buildType": "apk"
       },
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://web-production-d96c0.up.railway.app"
+      }
+    },
+    "public": {
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://web-production-d96c0.up.railway.app"
       }

@@ -33,6 +33,7 @@ export function InviteMembersScreen(): React.ReactElement {
   const teamName = useTeamStore((s) => s.teamName);
   const addToast = useUiStore((s) => s.addToast);
   const [deepLink, setDeepLink] = useState<string | null>(null);
+  const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,6 +49,7 @@ export function InviteMembersScreen(): React.ReactElement {
         const { data } = await api.post<InvitationResponse>(`/teams/${teamId}/invitations`);
         if (!cancelled) {
           setDeepLink(data.deepLink);
+          setInvitationCode(data.token);
         }
       } catch {
         if (!cancelled) {
@@ -86,6 +88,15 @@ export function InviteMembersScreen(): React.ReactElement {
     navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
   }, [navigation]);
 
+  const onCopyCode = useCallback(async () => {
+    if (!invitationCode) {
+      return;
+    }
+    await Clipboard.setStringAsync(invitationCode);
+    analytics.track('invitation_sent', { method: 'code' });
+    addToast('success', 'Code copied');
+  }, [addToast, invitationCode]);
+
   return (
     <ScreenContainer scrollable>
       <Text variant="title" style={{ marginBottom: spacing.space8 }}>
@@ -113,6 +124,26 @@ export function InviteMembersScreen(): React.ReactElement {
           </Text>
         </View>
       ) : null}
+      {invitationCode ? (
+        <View
+          style={{
+            padding: spacing.space12,
+            backgroundColor: color.surfaceInput,
+            borderRadius: radius.sm,
+            marginBottom: spacing.space16,
+          }}
+        >
+          <Text variant="label" style={{ marginBottom: spacing.space8 }}>
+            Invitation code
+          </Text>
+          <Text variant="caption" colorToken={color.textSecondary} selectable style={{ marginBottom: spacing.space8 }}>
+            {invitationCode}
+          </Text>
+          <Text variant="caption" colorToken={color.textSecondary}>
+            Members can enter this code when creating their account.
+          </Text>
+        </View>
+      ) : null}
       <LoadingButton
         label="Share link"
         isLoading={false}
@@ -127,6 +158,15 @@ export function InviteMembersScreen(): React.ReactElement {
       >
         <Text variant="label" colorToken={deepLink && !loading ? color.actionPrimary : color.textDisabled}>
           Copy link
+        </Text>
+      </Pressable>
+      <Pressable
+        onPress={() => void onCopyCode()}
+        disabled={!invitationCode || loading}
+        style={{ paddingVertical: spacing.space12, alignItems: 'center' }}
+      >
+        <Text variant="label" colorToken={invitationCode && !loading ? color.actionPrimary : color.textDisabled}>
+          Copy code
         </Text>
       </Pressable>
       <Pressable onPress={onSkip} style={{ paddingVertical: spacing.space16, alignItems: 'center' }}>
