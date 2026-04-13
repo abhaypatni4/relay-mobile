@@ -53,3 +53,40 @@ export function useAvailability(
     refetchIntervalInBackground: false,
   });
 }
+
+export function useAvailabilityWindow(eventId: string | null) {
+  return useQuery({
+    queryKey: ['eventAvailabilityWindow', eventId],
+    queryFn: async () => {
+      const { data } = await api.get<AvailabilityResponse>(`/events/${eventId}/availability`);
+      return data.window;
+    },
+    enabled: Boolean(eventId),
+  });
+}
+
+export function useAvailabilitySubmissions(eventId: string | null) {
+  return useQuery({
+    queryKey: ['eventAvailabilitySubmissions', eventId],
+    queryFn: async () => {
+      const { data } = await api.get<AvailabilityResponse>(`/events/${eventId}/availability`);
+      return data.submissions;
+    },
+    enabled: Boolean(eventId),
+  });
+}
+
+export function useMyAvailability(eventId: string | null) {
+  const teamMemberId = useTeamStore((s) => s.activeTeamMemberId);
+  return useQuery({
+    queryKey: ['myEventAvailability', eventId, teamMemberId],
+    queryFn: async () => {
+      const { data } = await api.get<AvailabilityResponse>(`/events/${eventId}/availability`);
+      if (!teamMemberId) {
+        return null;
+      }
+      return data.submissions.find((s) => s.teamMemberId === teamMemberId) ?? null;
+    },
+    enabled: Boolean(eventId && teamMemberId),
+  });
+}

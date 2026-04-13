@@ -12,6 +12,7 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { api } from '@/services/api';
 import { analytics } from '@/services/analytics';
 import { useTeamStore } from '@/store/teamStore';
+import { useUiStore } from '@/store/uiStore';
 import { color } from '@/tokens/colors';
 import { radius } from '@/tokens/radius';
 import { spacing } from '@/tokens/spacing';
@@ -45,6 +46,7 @@ export function CreateEventScreen(): React.ReactElement {
   const navigation = useNavigation<NativeStackNavigationProp<EventsStackParamList, 'CreateEvent'>>();
   const queryClient = useQueryClient();
   const teamId = useTeamStore((s) => s.activeTeamId);
+  const addToast = useUiStore((s) => s.addToast);
   const [eventType, setEventType] = useState<EventType>('trip');
   const [name, setName] = useState('');
   const [eventDateIso, setEventDateIso] = useState('');
@@ -88,6 +90,11 @@ export function CreateEventScreen(): React.ReactElement {
         });
         return;
       }
+      if (eventType === 'match' || eventType === 'training') {
+        addToast('success', `${eventType === 'match' ? 'Match' : 'Training'} created. Availability window is open.`);
+        navigation.replace('EventDetail', { eventId: data.event.id });
+        return;
+      }
       navigation.navigate('EventsList');
     } catch (e: unknown) {
       if (axios.isAxiosError(e)) {
@@ -96,7 +103,7 @@ export function CreateEventScreen(): React.ReactElement {
     } finally {
       setLoading(false);
     }
-  }, [eventDateIso, eventType, location, name, navigation, queryClient, startTimeIso, teamId]);
+  }, [addToast, eventDateIso, eventType, location, name, navigation, queryClient, startTimeIso, teamId]);
 
   return (
     <ScreenContainer scrollable>

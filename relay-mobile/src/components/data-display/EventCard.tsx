@@ -49,7 +49,10 @@ function typeLabel(t: EventType): string {
   }
 }
 
-function statusPresentation(s: EventStatus): { label: string; bg: string; fg: string } {
+function statusPresentation(eventType: EventType, s: EventStatus): { label: string; bg: string; fg: string } {
+  if ((eventType === 'match' || eventType === 'training') && s === 'draft') {
+    return { label: 'Upcoming', bg: color.surfaceInput, fg: color.textSecondary };
+  }
   switch (s) {
     case 'cancelled':
       return { label: 'Cancelled', bg: color.surfaceInput, fg: color.stateError };
@@ -69,7 +72,7 @@ export function EventCard({ event, onPress, onPublishTrip, isPublishing = false 
   const teamId = useTeamStore((s) => s.activeTeamId);
   const { role, teamMemberId } = useCurrentMember();
   const typeColors = useMemo(() => typeBadgeColors(event.type), [event.type]);
-  const status = useMemo(() => statusPresentation(event.status), [event.status]);
+  const status = useMemo(() => statusPresentation(event.type, event.status), [event.status, event.type]);
   const statusAccent = useMemo(() => {
     if (event.status === 'cancelled') {
       return color.stateError;
@@ -77,7 +80,7 @@ export function EventCard({ event, onPress, onPublishTrip, isPublishing = false 
     if (event.status === 'postponed') {
       return color.stateWarning;
     }
-    if (event.status === 'draft') {
+    if (event.status === 'draft' && event.type === 'trip') {
       return color.stateWarning;
     }
     return color.actionPrimary;
@@ -117,6 +120,22 @@ export function EventCard({ event, onPress, onPublishTrip, isPublishing = false 
       return data;
     },
     enabled: Boolean(role === 'coach' && event.status === 'active' && (event.type === 'match' || event.type === 'training')),
+  });
+  const playerAvailQuery = useQuery({
+    queryKey: ['eventCardPlayerAvailability', event.id, teamMemberId],
+    queryFn: async () => {
+      const { data } = await api.get<{ window: { id: string; isLocked: boolean } | null; submissions: { teamMemberId: string; availabilityStatus: string | null }[] }>(
+        `/events/${event.id}/availability`,
+      );
+      const mine = data.submissions.find((s) => s.teamMemberId === teamMemberId);
+      return { window: data.window, mine };
+    },
+    enabled: Boolean(
+      role === 'player' &&
+        teamMemberId &&
+        (event.type === 'match' || event.type === 'training') &&
+        event.status !== 'cancelled',
+    ),
   });
 
   const coordinatorConfirmed = useMemo(() => {
@@ -274,6 +293,37 @@ export function EventCard({ event, onPress, onPublishTrip, isPublishing = false 
             Not traveling
           </Text>
         </View>
+      ) : null}
+      {role === 'player' && (event.type === 'match' || event.type === 'training') ? (
+        playerAvailQuery.data?.mine?.availabilityStatus ? (
+          <View
+            style={{
+              alignSelf: 'flex-start',
+              paddingHorizontal: spacing.space12,
+              paddingVertical: spacing.space8,
+              borderRadius: spacing.space16,
+              backgroundColor:
+                playerAvailQuery.data.mine.availabilityStatus === 'available'
+                  ? color.stateSuccess
+                  : playerAvailQuery.data.mine.availabilityStatus === 'limited'
+                    ? color.stateWarning
+                    : color.stateError,
+              marginBottom: spacing.space8,
+            }}
+          >
+            <Text variant="label" colorToken={color.actionOnPrimary}>
+              {playerAvailQuery.data.mine.availabilityStatus === 'available'
+                ? '✓ Available'
+                : playerAvailQuery.data.mine.availabilityStatus === 'limited'
+                  ? '~ Limited'
+                  : '✗ Unavailable'}
+            </Text>
+          </View>
+        ) : (
+          <Text variant="label" colorToken={color.stateWarning} style={{ marginBottom: spacing.space8 }}>
+            Submit availability
+          </Text>
+        )
       ) : null}
       {role === 'coach' && event.status === 'active' && (event.type === 'match' || event.type === 'training') ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.space8 }}>
