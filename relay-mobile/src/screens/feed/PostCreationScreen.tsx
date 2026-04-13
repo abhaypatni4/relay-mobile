@@ -48,6 +48,19 @@ const typeOptions: { key: PostType; title: string; description: string }[] = [
   },
 ];
 
+function allowedPostTypesForRole(role: ReturnType<typeof useCurrentMember>['role']): PostType[] {
+  if (role === 'coordinator') {
+    return ['scheduleUpdate', 'travelInfo', 'generalAnnouncement', 'urgentAlert'];
+  }
+  if (role === 'coach') {
+    return ['scheduleUpdate', 'travelInfo', 'generalAnnouncement'];
+  }
+  if (role === 'staff') {
+    return ['travelInfo', 'generalAnnouncement'];
+  }
+  return [];
+}
+
 export function PostCreationScreen(): React.ReactElement {
   useFocusEffect(
     React.useCallback(() => {
@@ -75,6 +88,20 @@ export function PostCreationScreen(): React.ReactElement {
   const eventsQuery = useTeamEvents(teamId);
 
   const hasActiveTrip = (eventsQuery.data ?? []).some((e) => e.status === 'active' && e.type === 'trip');
+  const allowedPostTypes = React.useMemo(() => allowedPostTypesForRole(role), [role]);
+  const visibleTypeOptions = React.useMemo(
+    () => typeOptions.filter((opt) => allowedPostTypes.includes(opt.key)),
+    [allowedPostTypes],
+  );
+
+  useEffect(() => {
+    if (!selectedType) {
+      return;
+    }
+    if (!allowedPostTypes.includes(selectedType)) {
+      setSelectedType(null);
+    }
+  }, [allowedPostTypes, selectedType]);
 
   useEffect(() => {
     if (!teamMemberId || !canCreate) {
@@ -197,7 +224,7 @@ export function PostCreationScreen(): React.ReactElement {
     return (
       <ScreenContainer scrollable>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text variant="body">Feed creation is only available to coaches and coordinators.</Text>
+          <Text variant="body">Feed creation is only available to coordinators, coaches, and staff.</Text>
         </View>
       </ScreenContainer>
     );
@@ -212,7 +239,7 @@ export function PostCreationScreen(): React.ReactElement {
           <Text variant="title" style={{ marginBottom: spacing.space12 }}>
             Post type
           </Text>
-          {typeOptions.map((opt) => {
+          {visibleTypeOptions.map((opt) => {
             const selected = selectedType === opt.key;
             return (
               <Pressable

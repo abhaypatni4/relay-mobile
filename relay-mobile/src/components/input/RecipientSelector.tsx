@@ -5,6 +5,7 @@ import { Divider } from '@/components/foundation/Divider';
 import { Icon } from '@/components/foundation/Icon';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
+import { useCurrentMember } from '@/hooks/useCurrentMember';
 import type { RecipientGroup } from '@/types/models';
 
 export interface RecipientSelectorProps {
@@ -39,7 +40,14 @@ export function RecipientSelector({
   onSelect,
   hasActiveTrip = true,
 }: RecipientSelectorProps): React.ReactElement {
-  const options: RecipientGroup[] = ['fullTeam', 'players', 'coachingStaff', 'travelingSquad'];
+  const { role } = useCurrentMember();
+  const options = React.useMemo<RecipientGroup[]>(() => {
+    const base: RecipientGroup[] = ['fullTeam', 'players', 'travelingSquad'];
+    if (role === 'coordinator') {
+      return ['fullTeam', 'players', 'coachingStaff', 'travelingSquad'];
+    }
+    return base;
+  }, [role]);
 
   return (
     <View>

@@ -1,7 +1,7 @@
 import type { Role } from '@/types/models';
 
 export function canCreatePosts(role: Role): boolean {
-  return role === 'coordinator' || role === 'coach';
+  return role === 'coordinator' || role === 'coach' || role === 'staff';
 }
 
 export function canViewDeliveryStates(role: Role): boolean {
