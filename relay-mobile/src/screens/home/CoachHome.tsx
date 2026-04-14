@@ -4,7 +4,7 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
-import { Pressable, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import { Icon } from '@/components/foundation/Icon';
 import { Text } from '@/components/foundation/Text';
 import { CardContainer } from '@/components/layout/CardContainer';
@@ -35,7 +35,7 @@ export function CoachHome(): React.ReactElement {
   const navigation = useNavigation<HomeNav>();
   const userId = useAuthStore((s) => s.userId);
   const teamId = useTeamStore((s) => s.activeTeamId);
-  const { data: events = [], isLoading } = useTeamEvents(teamId);
+  const { data: events = [], isLoading, isError, refetch } = useTeamEvents(teamId);
   const { data: me } = useQuery({
     queryKey: ['users', 'me'],
     queryFn: fetchMe,
@@ -93,10 +93,23 @@ export function CoachHome(): React.ReactElement {
 
   if (isLoading) {
     return (
-      <View style={{ padding: spacing.space16 }}>
-        <Text variant="body" colorToken={color.textSecondary}>
-          Loading…
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={color.actionPrimary} />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.space16 }}>
+        <Text variant="body" style={{ marginBottom: spacing.space12 }}>
+          Something went wrong
         </Text>
+        <Pressable onPress={() => void refetch()} style={{ padding: spacing.space8 }}>
+          <Text variant="label" colorToken={color.actionPrimary}>
+            Try again
+          </Text>
+        </Pressable>
       </View>
     );
   }
@@ -160,7 +173,7 @@ export function CoachHome(): React.ReactElement {
               borderLeftColor: color.actionPrimary,
             }}
           >
-            <Text variant="title" style={{ fontWeight: '700', marginBottom: spacing.space8 }}>
+            <Text variant="title" numberOfLines={2} style={{ fontWeight: '700', marginBottom: spacing.space8 }}>
               {nextTrip.name}
             </Text>
             <Text variant="body" colorToken={color.textSecondary} style={{ marginBottom: spacing.space4 }}>
@@ -196,7 +209,7 @@ export function CoachHome(): React.ReactElement {
               borderLeftColor: color.actionPrimary,
             }}
           >
-            <Text variant="title" style={{ fontWeight: '700', marginBottom: spacing.space8 }}>
+            <Text variant="title" numberOfLines={2} style={{ fontWeight: '700', marginBottom: spacing.space8 }}>
               {nextMatchTraining.name}
             </Text>
             <Text variant="body" colorToken={color.textSecondary} style={{ marginBottom: spacing.space8 }}>
@@ -216,9 +229,8 @@ export function CoachHome(): React.ReactElement {
             padding: spacing.space20,
             borderRadius: spacing.space12,
             borderWidth: 1,
-            borderStyle: 'dashed',
-            borderColor: color.borderDefault,
-            backgroundColor: color.surfaceInput,
+            borderColor: color.borderSubtle,
+            backgroundColor: color.surfaceElevated,
             alignItems: 'center',
           }}
         >

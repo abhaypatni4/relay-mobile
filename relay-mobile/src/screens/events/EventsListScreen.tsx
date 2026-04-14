@@ -2,9 +2,9 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, SectionList } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, SectionList, View } from 'react-native';
+import { Icon } from '@/components/foundation/Icon';
 import { Text } from '@/components/foundation/Text';
-import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { EventCard, eventStartDate } from '@/components/data-display/EventCard';
 import { ConfirmationSheet } from '@/components/overlay/ConfirmationSheet';
 import { SectionHeader } from '@/components/layout/SectionHeader';
@@ -39,7 +39,7 @@ export function EventsListScreen(): React.ReactElement {
   const teamId = useTeamStore((s) => s.activeTeamId);
   const role = useTeamStore((s) => s.role);
   const addToast = useUiStore((s) => s.addToast);
-  const { data: teamEventsData, isLoading, refetch, isRefetching } = useTeamEvents(teamId);
+  const { data: teamEventsData, isLoading, isError, refetch, isRefetching } = useTeamEvents(teamId);
 
   const [pastExpanded, setPastExpanded] = useState(false);
   const [publishTarget, setPublishTarget] = useState<ApiEventListItem | null>(null);
@@ -57,7 +57,7 @@ export function EventsListScreen(): React.ReactElement {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight:
-        role === 'coordinator'
+        role === 'coordinator' || role === 'coach'
           ? () => (
               <Pressable
                 onPress={() => navigation.navigate('CreateEvent')}
@@ -204,11 +204,27 @@ export function EventsListScreen(): React.ReactElement {
 
   if (isLoading) {
     return (
-      <ScreenContainer scrollable>
-        <SectionHeader title="Upcoming" count={0} />
-        <SkeletonLoader variant="card" style={{ marginBottom: spacing.space12 }} />
-        <SkeletonLoader variant="card" style={{ marginBottom: spacing.space12 }} />
-        <SkeletonLoader variant="card" />
+      <ScreenContainer>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={color.actionPrimary} />
+        </View>
+      </ScreenContainer>
+    );
+  }
+
+  if (isError) {
+    return (
+      <ScreenContainer>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text variant="body" style={{ marginBottom: spacing.space12 }}>
+            Something went wrong
+          </Text>
+          <Pressable onPress={() => void refetch()} style={{ padding: spacing.space8 }}>
+            <Text variant="label" colorToken={color.actionPrimary}>
+              Try again
+            </Text>
+          </Pressable>
+        </View>
       </ScreenContainer>
     );
   }
@@ -231,6 +247,26 @@ export function EventsListScreen(): React.ReactElement {
         renderSectionFooter={renderSectionFooter}
         stickySectionHeadersEnabled={false}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} />}
+        ListEmptyComponent={
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: color.borderSubtle,
+              backgroundColor: color.surfaceElevated,
+              borderRadius: spacing.space12,
+              padding: spacing.space24,
+              alignItems: 'center',
+            }}
+          >
+            <Icon name="calendar" size={40} color={color.actionPrimary} />
+            <Text variant="body" style={{ marginTop: spacing.space12, textAlign: 'center' }}>
+              No upcoming events
+            </Text>
+            <Text variant="label" colorToken={color.textSecondary} style={{ marginTop: spacing.space4, textAlign: 'center' }}>
+              Create your next event to get started.
+            </Text>
+          </View>
+        }
         contentContainerStyle={{ paddingBottom: spacing.space32 }}
       />
       <ConfirmationSheet

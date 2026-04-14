@@ -3,6 +3,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useMemo } from 'react';
 import { Alert, FlatList, Pressable, View } from 'react-native';
+import { Icon } from '@/components/foundation/Icon';
 import { Text } from '@/components/foundation/Text';
 import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
@@ -227,9 +228,24 @@ export function TeamRosterScreen(): React.ReactElement {
         <Text variant="title" style={{ marginBottom: spacing.space8 }}>
           Team roster
         </Text>
-        <Text variant="body" colorToken={color.textSecondary}>
-          No one is on this team yet. Invite members to get started.
-        </Text>
+        <View
+          style={{
+            borderRadius: spacing.space12,
+            borderWidth: 1,
+            borderColor: color.borderSubtle,
+            backgroundColor: color.surfaceElevated,
+            padding: spacing.space24,
+            alignItems: 'center',
+          }}
+        >
+          <Icon name="team" size={40} color={color.actionPrimary} />
+          <Text variant="body" style={{ marginTop: spacing.space12, textAlign: 'center' }}>
+            No members yet
+          </Text>
+          <Text variant="label" colorToken={color.textSecondary} style={{ marginTop: spacing.space4, textAlign: 'center' }}>
+            Invite members to get started.
+          </Text>
+        </View>
         <View style={{ marginTop: spacing.space24 }}>
           <SignOutButton />
         </View>

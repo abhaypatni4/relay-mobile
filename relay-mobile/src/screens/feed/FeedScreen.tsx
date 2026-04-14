@@ -1,10 +1,9 @@
 import { analytics } from '@/services/analytics';
 import React from 'react';
-import { FlatList, Pressable, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
-import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { Text } from '@/components/foundation/Text';
 import { Icon } from '@/components/foundation/Icon';
 import { OfflineBanner } from '@/components/feedback/OfflineBanner';
@@ -80,13 +79,41 @@ export function FeedScreen(): React.ReactElement {
       <OfflineBanner />
       <View style={{ flex: 1, paddingHorizontal: spacing.space16, paddingTop: spacing.space16 }}>
         {q.isLoading ? (
-          <>
-            <SkeletonLoader variant="card" style={{ marginBottom: spacing.space12 }} />
-            <SkeletonLoader variant="card" />
-          </>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <ActivityIndicator size="large" color={color.actionPrimary} />
+          </View>
+        ) : q.isError ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <Text variant="body" style={{ marginBottom: spacing.space12 }}>
+              Something went wrong
+            </Text>
+            <Pressable onPress={() => void q.refetch()} style={{ padding: spacing.space8 }}>
+              <Text variant="label" colorToken={color.actionPrimary}>
+                Try again
+              </Text>
+            </Pressable>
+          </View>
         ) : showEmpty ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Text variant="body">No updates yet. Check back when your coordinator posts.</Text>
+            <View
+              style={{
+                width: '100%',
+                borderRadius: spacing.space12,
+                borderWidth: 1,
+                borderColor: color.borderSubtle,
+                backgroundColor: color.surfaceElevated,
+                padding: spacing.space24,
+                alignItems: 'center',
+              }}
+            >
+              <Icon name="feed" size={40} color={color.actionPrimary} />
+              <Text variant="body" style={{ marginTop: spacing.space12, textAlign: 'center' }}>
+                No posts yet
+              </Text>
+              <Text variant="label" colorToken={color.textSecondary} style={{ marginTop: spacing.space4, textAlign: 'center' }}>
+                Team updates will appear here.
+              </Text>
+            </View>
           </View>
         ) : (
           <FlatList
@@ -95,6 +122,7 @@ export function FeedScreen(): React.ReactElement {
             renderItem={renderItem}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+            refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => void q.refetch()} />}
             contentContainerStyle={{ paddingBottom: spacing.space24 }}
           />
         )}

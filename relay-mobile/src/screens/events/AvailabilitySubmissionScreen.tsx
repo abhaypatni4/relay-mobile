@@ -58,6 +58,7 @@ export function AvailabilitySubmissionScreen(): React.ReactElement {
   const teamId = useTeamStore((s) => s.activeTeamId);
   const queryClient = useQueryClient();
   const isOffline = useUiStore((s) => s.isOffline);
+  const addToast = useUiStore((s) => s.addToast);
   const insets = useSafeAreaInsets();
   const { teamMemberId } = useCurrentMember();
 
@@ -96,12 +97,6 @@ export function AvailabilitySubmissionScreen(): React.ReactElement {
     }
   }, [myRow?.availabilityStatus, myRow?.note]);
 
-  const closeAfterConfirm = useCallback(() => {
-    setTimeout(() => {
-      navigation.goBack();
-    }, 2000);
-  }, [navigation]);
-
   const onSubmit = useCallback(() => {
     if (isOffline || locked || !picker || !eventQuery.data) {
       return;
@@ -119,11 +114,12 @@ export function AvailabilitySubmissionScreen(): React.ReactElement {
             });
           }
           setInlineConfirm(`Got it — ${statusLabel(picker)} noted for ${evName}`);
-          closeAfterConfirm();
+          addToast('success', 'Availability submitted');
+          navigation.goBack();
         },
       },
     );
-  }, [closeAfterConfirm, eventId, eventQuery.data, isOffline, locked, myRow?.availabilityStatus, note, picker, queryClient, submitMutation]);
+  }, [addToast, eventId, eventQuery.data, isOffline, locked, myRow?.availabilityStatus, navigation, note, picker, queryClient, submitMutation]);
 
   const event = eventQuery.data;
   const submitDisabled = isOffline || !picker || submitMutation.isPending;

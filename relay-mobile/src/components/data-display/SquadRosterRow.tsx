@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
-import { StatusDot } from '@/components/data-display/StatusDot';
 import { Text } from '@/components/foundation/Text';
 import { Icon } from '@/components/foundation/Icon';
 import { color } from '@/tokens/colors';
@@ -18,7 +17,7 @@ export interface SquadRosterRowProps {
 
 function availabilityLabel(status: AvailabilityStatus | null): string {
   if (status === null) {
-    return 'Not Submitted';
+    return 'Pending';
   }
   if (status === 'available') {
     return 'Available';
@@ -27,6 +26,24 @@ function availabilityLabel(status: AvailabilityStatus | null): string {
     return 'Limited';
   }
   return 'Unavailable';
+}
+
+function availabilityPillStyle(status: AvailabilityStatus | null): {
+  bg: string;
+  borderColor: string;
+  textColor: string;
+  borderWidth: number;
+} {
+  if (status === 'available') {
+    return { bg: color.stateSuccess, borderColor: color.stateSuccess, textColor: color.actionOnPrimary, borderWidth: 0 };
+  }
+  if (status === 'limited') {
+    return { bg: color.stateWarning, borderColor: color.stateWarning, textColor: color.actionOnPrimary, borderWidth: 0 };
+  }
+  if (status === 'unavailable') {
+    return { bg: color.stateDestructive, borderColor: color.stateDestructive, textColor: color.actionOnPrimary, borderWidth: 0 };
+  }
+  return { bg: color.surfaceElevated, borderColor: color.borderDefault, textColor: color.textSecondary, borderWidth: 1 };
 }
 
 function operationalLabel(op: OperationalStatus): string {
@@ -56,6 +73,7 @@ export function SquadRosterRow({
     const op = operationalLabel(operationalStatus);
     return `${memberName}: ${avail}, ${op}`;
   }, [availabilityStatus, memberName, operationalStatus]);
+  const pill = availabilityPillStyle(availabilityStatus);
 
   return (
     <Pressable
@@ -75,18 +93,11 @@ export function SquadRosterRow({
         borderColor: color.borderSubtle,
       }}
     >
-      <StatusDot
-        status={availabilityStatus ?? 'notSubmitted'}
-        size="md"
-        accessibilityLabel={`${memberName}: ${availabilityLabel(availabilityStatus)}`}
-      />
-      <View style={{ flex: 1, marginLeft: spacing.space12 }}>
+      <View style={{ flex: 1 }}>
         <Text variant="body" style={{ fontWeight: '600' }}>
           {memberName}
         </Text>
-        <Text variant="caption" colorToken={color.textSecondary} style={{ marginTop: spacing.space4 }}>
-          {availabilityLabel(availabilityStatus)}
-        </Text>
+        {note ? <Text variant="caption" colorToken={color.textSecondary} style={{ marginTop: spacing.space4 }} numberOfLines={2}>{note}</Text> : null}
       </View>
       {note ? (
         <View style={{ marginRight: spacing.space8 }}>
@@ -98,12 +109,14 @@ export function SquadRosterRow({
           paddingHorizontal: spacing.space8,
           paddingVertical: spacing.space4,
           borderRadius: radius.sm,
-          backgroundColor: color.surfaceInput,
+          backgroundColor: pill.bg,
+          borderWidth: pill.borderWidth,
+          borderColor: pill.borderColor,
           maxWidth: '36%',
         }}
       >
-        <Text variant="caption" colorToken={color.textSecondary} numberOfLines={1}>
-          {operationalLabel(operationalStatus)}
+        <Text variant="caption" numberOfLines={1} style={{ color: pill.textColor }}>
+          {availabilityLabel(availabilityStatus)}
         </Text>
       </View>
     </Pressable>

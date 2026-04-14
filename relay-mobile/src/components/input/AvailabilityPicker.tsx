@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import React, { useCallback } from 'react';
 import { Platform, Pressable, View } from 'react-native';
+import { Icon } from '@/components/foundation/Icon';
 import { Text } from '@/components/foundation/Text';
 import { color } from '@/tokens/colors';
 import { radius } from '@/tokens/radius';
@@ -13,10 +14,10 @@ export interface AvailabilityPickerProps {
   isLocked?: boolean;
 }
 
-const OPTIONS: { value: AvailabilityStatus; label: string; fg: string; border: string }[] = [
-  { value: 'available', label: 'Available', fg: color.stateSuccess, border: color.stateSuccess },
-  { value: 'limited', label: 'Limited', fg: color.stateWarning, border: color.stateWarning },
-  { value: 'unavailable', label: 'Unavailable', fg: color.stateDestructive, border: color.stateDestructive },
+const OPTIONS: { value: AvailabilityStatus; label: string; icon: 'check' | 'minus' | 'x'; fg: string; border: string }[] = [
+  { value: 'available', label: 'Available', icon: 'check', fg: color.stateSuccess, border: color.stateSuccess },
+  { value: 'limited', label: 'Limited', icon: 'minus', fg: color.stateWarning, border: color.stateWarning },
+  { value: 'unavailable', label: 'Unavailable', icon: 'x', fg: color.stateDestructive, border: color.stateDestructive },
 ];
 const MIN_TOUCH_TARGET = 64; // Product requirement for availability option touch size
 
@@ -66,9 +67,12 @@ export function AvailabilityPicker({
               justifyContent: 'center',
             }}
           >
-            <Text variant="label" style={{ color: opt.fg }}>
-              {opt.label}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icon name={opt.icon} size={18} color={opt.fg} />
+              <Text variant="label" style={{ color: opt.fg, marginLeft: spacing.space8 }}>
+                {opt.label}
+              </Text>
+            </View>
           </Pressable>
         );
       })}

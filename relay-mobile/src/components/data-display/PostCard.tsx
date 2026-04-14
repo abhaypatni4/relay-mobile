@@ -40,6 +40,15 @@ function isUnread(state: DeliveryState): boolean {
   return state === 'notSeen';
 }
 
+function recipientGroupLabel(group: Post['recipientGroup']): string {
+  if (group === 'fullTeam') return 'Full team';
+  if (group === 'players') return 'Players only';
+  if (group === 'staff' || group === 'allStaff') return 'Staff only';
+  if (group === 'coaches') return 'Coaches only';
+  if (group === 'coachingStaff') return 'Coaching staff';
+  return 'Traveling squad';
+}
+
 function normalizeDeliveryState(
   state: Post['currentUserDeliveryState'],
 ): { state: DeliveryState; seenAt: string | null; acknowledgedAt: string | null } {
@@ -124,12 +133,15 @@ export function PostCard({ post, onPress }: PostCardProps): React.ReactElement {
         ) : null}
       </View>
 
-      <Text variant="body" style={{ marginBottom: spacing.space12 }}>
-        {post.content.length > 100 ? `${post.content.slice(0, 100)}…` : post.content}
+      <Text variant="body" numberOfLines={2} style={{ marginBottom: spacing.space12 }}>
+        {post.content}
       </Text>
 
       <Text variant="caption" style={{ color: color.textSecondary }}>
         {post.createdByName} • {formatRelative(post.createdAt)}
+      </Text>
+      <Text variant="caption" style={{ color: color.textSecondary, marginTop: spacing.space4 }}>
+        {recipientGroupLabel(post.recipientGroup)}
       </Text>
     </CardContainer>
   );

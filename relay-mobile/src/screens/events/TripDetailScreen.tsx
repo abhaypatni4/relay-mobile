@@ -4,8 +4,9 @@ import { useFocusEffect, useIsFocused, useNavigation, useRoute } from '@react-na
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Alert, FlatList, Pressable, View, type LayoutChangeEvent } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, View, type LayoutChangeEvent } from 'react-native';
 import { AcknowledgmentButton } from '@/components/role-specific/AcknowledgmentButton';
+import { Icon } from '@/components/foundation/Icon';
 import { Text } from '@/components/foundation/Text';
 import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { SquadMemberRow } from '@/components/data-display/SquadMemberRow';
@@ -93,13 +94,13 @@ function formatDate(iso: string): string {
 function statusBadge(status: string): { label: string; fg: string; bg: string } {
   switch (status) {
     case 'cancelled':
-      return { label: 'Cancelled', fg: color.stateError, bg: 'hsl(4, 40%, 94%)' };
+      return { label: 'Cancelled', fg: color.stateError, bg: color.surfaceInput };
     case 'postponed':
-      return { label: 'Postponed', fg: color.stateWarning, bg: 'hsl(38, 85%, 92%)' };
+      return { label: 'Postponed', fg: color.stateWarning, bg: color.surfaceInput };
     case 'draft':
       return { label: 'Draft', fg: color.textSecondary, bg: color.surfaceInput };
     default:
-      return { label: 'Active', fg: color.stateSuccess, bg: 'hsl(145, 40%, 92%)' };
+      return { label: 'Active', fg: color.stateSuccess, bg: color.surfaceInput };
   }
 }
 
@@ -572,9 +573,12 @@ export function TripDetailScreen(): React.ReactElement {
         <Text variant="title" style={{ marginBottom: spacing.space8 }}>
           {trip.departureTime ? formatDateTime(trip.departureTime) : '—'}
         </Text>
-        <Text variant="body" style={{ marginBottom: spacing.space16 }}>
-          {trip.departureMeetingPoint?.trim() ? trip.departureMeetingPoint : '—'}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.space16 }}>
+          <Icon name="calendar" size={16} color={color.textSecondary} />
+          <Text variant="body" style={{ marginLeft: spacing.space8 }}>
+            {trip.departureMeetingPoint?.trim() ? trip.departureMeetingPoint : '—'}
+          </Text>
+        </View>
 
         {renderOptional('Transportation notes', trip.transportationNotes)}
         {renderOptional('Accommodation', trip.accommodationName)}
@@ -596,11 +600,25 @@ export function TripDetailScreen(): React.ReactElement {
         {renderOptional('Additional notes', trip.additionalNotes)}
 
         {!isPlayer && !isCancelled && trip.isPublished ? (
-          <Text variant="caption" colorToken={color.textSecondary} style={{ marginBottom: spacing.space8 }}>
-            {ackSummary.total === 0
-              ? 'No active traveling members to acknowledge yet'
-              : `${ackSummary.done} of ${ackSummary.total} acknowledged`}
-          </Text>
+          <View style={{ marginBottom: spacing.space8 }}>
+            <Text variant="caption" colorToken={color.textSecondary} style={{ marginBottom: spacing.space8 }}>
+              {ackSummary.total === 0
+                ? 'No active traveling members to acknowledge yet'
+                : `${ackSummary.done} of ${ackSummary.total} acknowledged`}
+            </Text>
+            {ackSummary.total > 0 ? (
+              <View style={{ height: spacing.space8, borderRadius: spacing.space8, backgroundColor: color.borderSubtle }}>
+                <View
+                  style={{
+                    height: spacing.space8,
+                    borderRadius: spacing.space8,
+                    backgroundColor: color.actionPrimary,
+                    width: `${Math.round((ackSummary.done / ackSummary.total) * 100)}%`,
+                  }}
+                />
+              </View>
+            ) : null}
+          </View>
         ) : null}
 
         {isPlayer && !isCancelled ? (
@@ -637,17 +655,24 @@ export function TripDetailScreen(): React.ReactElement {
   if (resolveError && !eventId) {
     return (
       <ScreenContainer scrollable>
-        <Text variant="body">Trip could not be loaded.</Text>
+        <Text variant="body" style={{ marginBottom: spacing.space12 }}>Something went wrong</Text>
+        <Pressable onPress={() => {
+          void eventQuery.refetch();
+          void tripQuery.refetch();
+          void squadQuery.refetch();
+        }}>
+          <Text variant="label" colorToken={color.actionPrimary}>Try again</Text>
+        </Pressable>
       </ScreenContainer>
     );
   }
 
   if (loading) {
     return (
-      <ScreenContainer scrollable>
-        <SkeletonLoader variant="card" style={{ marginBottom: spacing.space12 }} />
-        <SkeletonLoader variant="card" style={{ marginBottom: spacing.space12 }} />
-        <SkeletonLoader variant="listRow" />
+      <ScreenContainer>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={color.actionPrimary} />
+        </View>
       </ScreenContainer>
     );
   }
@@ -655,7 +680,14 @@ export function TripDetailScreen(): React.ReactElement {
   if (!trip || !eventRow) {
     return (
       <ScreenContainer scrollable>
-        <Text variant="body">Trip could not be loaded.</Text>
+        <Text variant="body" style={{ marginBottom: spacing.space12 }}>Something went wrong</Text>
+        <Pressable onPress={() => {
+          void eventQuery.refetch();
+          void tripQuery.refetch();
+          void squadQuery.refetch();
+        }}>
+          <Text variant="label" colorToken={color.actionPrimary}>Try again</Text>
+        </Pressable>
       </ScreenContainer>
     );
   }

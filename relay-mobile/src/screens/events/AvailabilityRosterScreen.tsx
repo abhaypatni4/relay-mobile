@@ -1,8 +1,10 @@
 import type { RouteProp } from '@react-navigation/native';
 import { useRoute } from '@react-navigation/native';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
 import { SquadRosterRow } from '@/components/data-display/SquadRosterRow';
+import { Icon } from '@/components/foundation/Icon';
 import { Text } from '@/components/foundation/Text';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { ConfirmationSheet } from '@/components/overlay/ConfirmationSheet';
@@ -10,6 +12,7 @@ import { OperationalStatePicker } from '@/components/overlay/OperationalStatePic
 import { useSendSelectionNotifications } from '@/mutations/useSendSelectionNotifications';
 import { useSetOperationalStatus } from '@/mutations/useSetOperationalStatus';
 import { useAvailability, type AvailabilitySubmissionDto } from '@/queries/useAvailability';
+import { api } from '@/services/api';
 import { useTeamStore } from '@/store/teamStore';
 import { color } from '@/tokens/colors';
 import { spacing } from '@/tokens/spacing';
@@ -24,10 +27,19 @@ export function AvailabilityRosterScreen(): React.ReactElement {
   const route = useRoute<RouteProp<EventsStackParamList, 'AvailabilityRoster'>>();
   const { eventId } = route.params;
   const role = useTeamStore((s) => s.role);
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useAvailability(eventId, { pollEvery30sWhileFocused: true });
   const setOp = useSetOperationalStatus(eventId);
   const sendNotify = useSendSelectionNotifications(eventId);
+  const openWindow = useMutation({
+    mutationFn: async () => {
+      await api.post(`/events/${eventId}/availability/open`);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['availability', eventId] });
+    },
+  });
 
   const [availFilter, setAvailFilter] = useState<AvailFilter>('all');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
@@ -128,10 +140,25 @@ export function AvailabilityRosterScreen(): React.ReactElement {
 
   if (isLoading && !data) {
     return (
-      <ScreenContainer scrollable>
-        <Text variant="body" colorToken={color.textSecondary}>
-          Loading…
-        </Text>
+      <ScreenContainer>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={color.actionPrimary} />
+        </View>
+      </ScreenContainer>
+    );
+  }
+
+  if (!data) {
+    return (
+      <ScreenContainer>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text variant="body" style={{ marginBottom: spacing.space12 }}>
+            Something went wrong
+          </Text>
+          <Pressable onPress={() => void queryClient.invalidateQueries({ queryKey: ['availability', eventId] })}>
+            <Text variant="label" colorToken={color.actionPrimary}>Try again</Text>
+          </Pressable>
+        </View>
       </ScreenContainer>
     );
   }
@@ -180,9 +207,45 @@ export function AvailabilityRosterScreen(): React.ReactElement {
               onPress={() => setPickerRow(item)}
             />
           )}
+          ListEmptyComponent={
+            <View
+              style={{
+                borderRadius: spacing.space12,
+                borderWidth: 1,
+                borderColor: color.borderSubtle,
+                backgroundColor: color.surfaceElevated,
+                padding: spacing.space24,
+                alignItems: 'center',
+              }}
+            >
+              <Icon name="team" size={40} color={color.actionPrimary} />
+              <Text variant="body" style={{ textAlign: 'center', marginTop: spacing.space12 }}>No submissions yet</Text>
+              <Text variant="label" colorToken={color.textSecondary} style={{ marginTop: spacing.space4, textAlign: 'center' }}>
+                Player availability will appear here.
+              </Text>
+            </View>
+          }
           contentContainerStyle={{ paddingBottom: 120 }}
         />
       </View>
+      {!data.window ? (
+        <View style={{ position: 'absolute', left: spacing.space16, right: spacing.space16, bottom: spacing.space24 }}>
+          <View
+            style={{
+              borderRadius: spacing.space12,
+              borderWidth: 1,
+              borderColor: color.borderSubtle,
+              backgroundColor: color.surfaceElevated,
+              padding: spacing.space16,
+            }}
+          >
+            <Text variant="body" style={{ marginBottom: spacing.space8 }}>Availability window is not open.</Text>
+            <Pressable onPress={() => openWindow.mutate()} style={{ paddingVertical: spacing.space8 }}>
+              <Text variant="label" colorToken={color.actionPrimary}>Open window</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
 
       {notifyTargetCount > 0 ? (
         <View

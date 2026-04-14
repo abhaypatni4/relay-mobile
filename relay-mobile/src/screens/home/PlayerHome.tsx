@@ -4,7 +4,7 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
-import { Pressable, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import { Text } from '@/components/foundation/Text';
 import { CardContainer } from '@/components/layout/CardContainer';
 import { eventStartDate } from '@/components/data-display/EventCard';
@@ -45,7 +45,7 @@ export function PlayerHome(): React.ReactElement {
   const teamId = useTeamStore((s) => s.activeTeamId);
   const userId = useAuthStore((s) => s.userId);
   const { teamMemberId } = useCurrentMember();
-  const { data: events = [], isLoading } = useTeamEvents(teamId);
+  const { data: events = [], isLoading, isError, refetch } = useTeamEvents(teamId);
   const { data: me } = useQuery({
     queryKey: ['users', 'me'],
     queryFn: fetchMe,
@@ -81,16 +81,6 @@ export function PlayerHome(): React.ReactElement {
       )
       .sort((a, b) => eventStartDate(a).getTime() - eventStartDate(b).getTime())[0];
   }, [events, now]);
-
-  console.log(
-    '[PlayerHome] all events:',
-    events?.map((e) => ({
-      id: e.id,
-      type: e.type,
-      status: e.status,
-    })),
-  );
-  console.log('[PlayerHome] nextMatchTraining:', nextMatchTraining);
 
   const selectionAvail = useAvailability(nextMatchTraining?.id ?? null);
   const selectionRow = useMemo(
@@ -192,10 +182,23 @@ export function PlayerHome(): React.ReactElement {
 
   if (isLoading) {
     return (
-      <View style={{ padding: spacing.space16 }}>
-        <Text variant="body" colorToken={color.textSecondary}>
-          Loading…
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={color.actionPrimary} />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.space16 }}>
+        <Text variant="body" style={{ marginBottom: spacing.space12 }}>
+          Something went wrong
         </Text>
+        <Pressable onPress={() => void refetch()} style={{ padding: spacing.space8 }}>
+          <Text variant="label" colorToken={color.actionPrimary}>
+            Try again
+          </Text>
+        </Pressable>
       </View>
     );
   }
@@ -272,7 +275,7 @@ export function PlayerHome(): React.ReactElement {
               borderLeftColor: color.actionPrimary,
             }}
           >
-            <Text variant="title" style={{ fontWeight: '700', marginBottom: spacing.space8 }}>
+            <Text variant="title" numberOfLines={2} style={{ fontWeight: '700', marginBottom: spacing.space8 }}>
               {nextMatchTraining.name}
             </Text>
             <Text variant="body" colorToken={color.textSecondary} style={{ marginBottom: spacing.space8 }}>

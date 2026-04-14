@@ -18,6 +18,13 @@ import { spacing } from '@/tokens/spacing';
 import type { FeedStackParamList } from '@/types/navigation';
 import type { DeliveryState, Post } from '@/types/models';
 
+function postTypeLabel(type: Post['type']): string {
+  if (type === 'scheduleUpdate') return 'Schedule Update';
+  if (type === 'travelInfo') return 'Travel Info';
+  if (type === 'urgentAlert') return 'Urgent Alert';
+  return 'Announcement';
+}
+
 export function PostDetailScreen(): React.ReactElement {
   useFocusEffect(
     React.useCallback(() => {
@@ -195,10 +202,31 @@ export function PostDetailScreen(): React.ReactElement {
 
   return (
     <ScreenContainer scrollable>
+      {post ? (
+        <View
+          style={{
+            alignSelf: 'flex-start',
+            paddingHorizontal: spacing.space8,
+            paddingVertical: spacing.space4,
+            borderRadius: spacing.space8,
+            backgroundColor: color.surfaceInput,
+            marginBottom: spacing.space8,
+          }}
+        >
+          <Text variant="caption" colorToken={color.textSecondary}>
+            {postTypeLabel(post.type)}
+          </Text>
+        </View>
+      ) : null}
       <Text variant="display" style={{ marginBottom: spacing.space12 }}>
         {title}
       </Text>
       {body ? <Text variant="body">{body}</Text> : <Text variant="body">No content.</Text>}
+      {post ? (
+        <Text variant="caption" colorToken={color.textSecondary} style={{ marginTop: spacing.space8 }}>
+          {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(post.createdAt))}
+        </Text>
+      ) : null}
       {showAcknowledgeButton ? (
         <Pressable
           onPress={() => acknowledgeMutation.mutate()}
@@ -226,6 +254,9 @@ export function PostDetailScreen(): React.ReactElement {
             style={{ color: color.textSecondary, letterSpacing: 1, marginBottom: spacing.space8 }}
           >
             DELIVERY
+          </Text>
+          <Text variant="body" style={{ marginBottom: spacing.space8 }}>
+            Total: {delivery.total ?? delivery.sentCount}
           </Text>
           <Text variant="body" style={{ marginBottom: spacing.space8 }}>
             👁 {delivery.seen ?? delivery.seenCount} seen | ○ {delivery.notSeen ?? Math.max((delivery.total ?? delivery.sentCount) - (delivery.seen ?? delivery.seenCount), 0)} not seen | ✓ {delivery.acknowledged ?? delivery.acknowledgedCount} acknowledged

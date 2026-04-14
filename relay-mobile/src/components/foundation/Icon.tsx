@@ -55,6 +55,21 @@ const icons: Record<string, React.FC<{ color: string; size: number }>> = {
       <Path d="M12 5v14M5 12h14" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
     </Svg>
   ),
+  x: ({ color, size }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M6 6l12 12M18 6L6 18" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+    </Svg>
+  ),
+  'arrow-left': ({ color, size }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M15 6l-6 6 6 6M9 12h10" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  ),
+  minus: ({ color, size }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M6 12h12" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+    </Svg>
+  ),
 };
 
 export interface IconProps {
